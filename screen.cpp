@@ -1,10 +1,9 @@
 #include "screen.h"
+#include "utils.h"
 
 #include <iostream>
-#include <sstream>
 #include <vector>
 #include <string>
-
 using namespace std;
 
 
@@ -37,35 +36,3 @@ void Screen::startScreen() {
         words = split_sentence(command);
 }
 
-vector<string> split_sentence(string sen) {
-  
-    // Vector to store the words
-    vector<string> words;
-
-    // Temporary string to hold each word
-    string word = "";
-
-    // Iterate through each character in the sentence
-    for (char c : sen) {
-        if (c == ' ') {
-          
-            // If a space is found, add the word to the vector
-            words.push_back(word);
-          
-            // Reset the word
-            word = "";
-        }
-        else {
-            // Append the character to the current word
-            word += c;
-        }
-    }
-
-    // Add the last word to the vector
-    if (!word.empty()) {
-        words.push_back(word);
-    }
-
-    // Return the vector containing words
-    return words;
-}

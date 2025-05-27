@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <chrono>
 #include "screen.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -35,49 +36,6 @@ void schedulerStop() {
 
 void reportUtil() {
     cout << "report-util command recognized. Doing Something." << "\n";
-}
-
-vector<string> split_sentence(string sen) {
-  
-    // Vector to store the words
-    vector<string> words;
-
-    // Temporary string to hold each word
-    string word = "";
-
-    // Iterate through each character in the sentence
-    for (char c : sen) {
-        if (c == ' ') {
-          
-            // If a space is found, add the word to the vector
-            words.push_back(word);
-          
-            // Reset the word
-            word = "";
-        }
-        else {
-            // Append the character to the current word
-            word += c;
-        }
-    }
-
-    // Add the last word to the vector
-    if (!word.empty()) {
-        words.push_back(word);
-    }
-
-    // Return the vector containing words
-    return words;
-}
-
-string getCurrentTime() {
-    auto now = chrono::system_clock::now();
-    time_t now_c = chrono::system_clock::to_time_t(now);
-    tm *now_tm = localtime(&now_c);
-
-    char buffer[100];
-    strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", now_tm);
-    return string(buffer);
 }
 
 int main() {
