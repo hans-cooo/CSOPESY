@@ -16,7 +16,7 @@ class Screen {
     public:
         Screen(string name, string timeCreated);
         void displayDetails();
-
+        void startScreen();
 };
 
 #endif
