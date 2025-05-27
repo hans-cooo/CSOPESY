@@ -5,22 +5,9 @@
 #include <ctime>
 #include <iomanip>
 #include <chrono>
+#include "screen.h"
 
 using namespace std;
-
-class Screen {
-    string name;
-    string instruction;
-    string timeCreated;
-
-    public:
-        Screen(string name, string timeCreated) {
-            this->name = name;
-            this->instruction = "Line 10/100"; // Placeholder for demonstration
-            this->timeCreated = timeCreated;
-        }
-
-};
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -36,10 +23,6 @@ void printHeader() {
 
 void initialize() {
     cout << "initialize command recognized. Doing Something." << "\n";
-}
-
-void screen() {
-    cout << "screen command recognized. Doing Something." << "\n";
 }
 
 void schedulerTest() {
