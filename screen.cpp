@@ -36,3 +36,6 @@ void Screen::startScreen() {
         words = split_sentence(command);
 }
 
+string Screen::getName() const {
+    return name;
+}

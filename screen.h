@@ -17,6 +17,7 @@ class Screen {
         Screen(string name, string timeCreated);
         void displayDetails();
         void startScreen();
+        string getName() const;
 };
 
 #endif

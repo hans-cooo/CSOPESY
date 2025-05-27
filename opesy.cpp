@@ -44,10 +44,11 @@ int main() {
     cout << "Enter a command: ";
     getline(cin, command);
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
+    vector<Screen> screens; 
 
     while (words[0] != "exit") {
         if (words[0] == "clear") {
-            cout << "\033[2J\033[1;1H"; // ANSI escape code to clear the screen
+            clearScreen();
             printHeader();
         } else if (words[0] == "initialize") {
             initialize();
@@ -57,9 +58,27 @@ int main() {
             }
             else{
                 if(words[1] == "-r") {
-                    cout << "Screen command recognized with -r option. Doing Something." << "\n"; // Add behavior for -r option
-                } else if (words[1] == "-s") {
-                    cout << "Screen command recognized with -s option. Doing Something." << "\n"; // Add behavior for -s option
+                    cout << "Screen command recognized with -r option. Doing Something." << "\n"; // Add behavior to go to created screen
+                } else if (words[1] == "-s") { // Add behavior to create a screen
+                    bool exists = false;
+                    for (const auto& screen : screens) {
+                        if (screen.getName() == words[2]) {
+                            cout << "Screen with name '" << words[2] << "' already exists." << "\n";
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (!exists) {
+                        Screen newScreen(words[2], getCurrentTime());
+                        screens.push_back(newScreen);
+                        cout << "Screen '" << words[2] << "' created at " << getCurrentTime() << "." << "\n";
+
+                        // Print all screens (might change this to a different command later)
+                        cout << "Current screens:\n";
+                        for (const auto& s : screens) {
+                            cout << "- " << s.getName() << "\n";
+                        }
+                    }
                 } else {
                     cout << "Invalid option for screen command." << "\n";
                 }

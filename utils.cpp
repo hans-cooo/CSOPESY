@@ -31,3 +31,7 @@ string getCurrentTime() {
     strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", now_tm);
     return string(buffer);
 }
+
+void clearScreen() {
+    cout << "\033[2J\033[1;1H"; // ANSI escape code to clear the screen
+}

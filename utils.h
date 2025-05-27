@@ -11,5 +11,6 @@
 
 std::vector<std::string> split_sentence(std::string sen);
 std::string getCurrentTime();
+void clearScreen();
 
 #endif
