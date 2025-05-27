@@ -57,8 +57,28 @@ int main() {
                 cout << "Invalid syntax." << "\n";
             }
             else{
-                if(words[1] == "-r") {
-                    cout << "Screen command recognized with -r option. Doing Something." << "\n"; // Add behavior to go to created screen
+                if(words[1] == "-r") { // Add behavior to go to created screen
+                    bool exists = false;
+                    for (auto& screen : screens) {
+                        if (screen.getName() == words[2]) {
+                            exists = true;
+                            break;
+                        }
+                    }
+                    if (exists) {
+                        for (auto& screen : screens) {
+                            if (screen.getName() == words[2]) {
+                                clearScreen();
+                                screen.startScreen();
+                                break;
+                            }
+                        }
+                        clearScreen();
+                        printHeader();
+                    } else {
+                        cout << "Screen with name '" << words[2] << "' does not exist." << "\n";
+                    }
+
                 } else if (words[1] == "-s") { // Add behavior to create a screen
                     bool exists = false;
                     for (const auto& screen : screens) {

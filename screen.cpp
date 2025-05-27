@@ -27,13 +27,23 @@ void Screen::startScreen() {
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
 
     while(words[0] != "exit"){ // Currently, the only command that exists for screen is exit
-        cout << "Invalid command." << "\n";
-    }
+        if (words[0] == "clear") {
+            clearScreen();
+            displayDetails();
+        } else if (words[0] == "exit") {
+            clearScreen();
+            return; // Exit the screen;
+        } else {
+            cout << "Invalid command." << "\n";
+        }
 
-    words.clear();
+
+
+        words.clear();
         cout << "Enter a command: ";
         getline(cin, command);
         words = split_sentence(command);
+    }
 }
 
 string Screen::getName() const {
