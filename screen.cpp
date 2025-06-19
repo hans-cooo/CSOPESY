@@ -12,6 +12,7 @@ Screen::Screen(string name, string timeCreated) {
     this->curr_instruction = 0;
     this->num_instructions = 0;
     this->timeCreated = timeCreated;
+    this->finished = false;
 }
 
 void Screen::displayDetails() {
@@ -57,4 +58,12 @@ void Screen::startScreen() {
 
 string Screen::getName() const {
     return name;
+}
+
+string Screen::getTimeCreated() const {
+    return timeCreated;
+}
+
+bool Screen::isFinished() const {
+    return finished;
 }

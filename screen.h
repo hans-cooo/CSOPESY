@@ -13,12 +13,15 @@ class Screen {
     int curr_instruction;
     int num_instructions;
     string timeCreated;
+    bool finished;
 
     public:
         Screen(string name, string timeCreated);
         void displayDetails();
         void startScreen();
         string getName() const;
+        string getTimeCreated() const;
+        bool isFinished() const;
 };
 
 #endif
