@@ -20,6 +20,7 @@ class Screen {
         Screen(string name, string timeCreated);
         void displayDetails();
         void startScreen();
+        void doProcess();
         string getName() const;
         string getTimeCreated() const;
         bool isFinished() const;

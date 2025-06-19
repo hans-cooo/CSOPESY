@@ -26,8 +26,11 @@ void initialize() {
     cout << "initialize command recognized. Doing Something." << "\n";
 }
 
-void schedulerStart() {
-    cout << "scheduler-start command recognized. Doing Something." << "\n";
+void schedulerStart(Screen& screen) {
+    cout << "scheduler-start command recognized. Doing Something." << "\n"; // Temporary, used to test doProcess function
+    while(!screen.isFinished()) { 
+        screen.doProcess(); 
+    }
 }
 
 void schedulerStop() {
@@ -102,14 +105,14 @@ int main() {
                 } else if (words[1] == "-ls"){ // Add behavior to list all screens
                     cout << "Current screens:\n"; //Temporary behavior
                     for (const auto& s : screens) {
-                        cout << "- " << s.getName() << "\n";
+                        cout << s.getName() << "    " << s.getTimeCreated() << "    " << "Core: " << "\n";
                     }
                 } else {
                     cout << "Invalid option for screen command." << "\n";
                 }
             }
         } else if (words[0] == "scheduler-start") {
-            schedulerStart();
+            schedulerStart(screens[0]); // Temporary, only starts the first screen
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();
         } else if (words[0] == "report-util") {
