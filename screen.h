@@ -14,6 +14,7 @@ class Screen {
     int num_instructions;
     string timeCreated;
     bool finished;
+    bool running;
 
     public:
         Screen(string name, string timeCreated);
@@ -22,6 +23,7 @@ class Screen {
         string getName() const;
         string getTimeCreated() const;
         bool isFinished() const;
+        bool isRunning() const;
 };
 
 #endif

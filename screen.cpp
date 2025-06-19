@@ -12,6 +12,7 @@ Screen::Screen(string name, string timeCreated) {
     this->curr_instruction = 0;
     this->num_instructions = 0;
     this->timeCreated = timeCreated;
+    this->running = false;
     this->finished = false;
 }
 
@@ -66,4 +67,8 @@ string Screen::getTimeCreated() const {
 
 bool Screen::isFinished() const {
     return finished;
+}
+
+bool Screen::isRunning() const {
+    return running;
 }
