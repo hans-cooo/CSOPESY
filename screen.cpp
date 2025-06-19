@@ -16,7 +16,7 @@ Screen::Screen(string name, string timeCreated) {
 
 void Screen::displayDetails() {
     cout << "Process Name: " << name << "\n";
-    cout << "Line of Instruction: " << curr_instruction << "\n";
+    cout << "Line of Instruction: " << curr_instruction << " / " << num_instructions << "\n";
     cout << "Time Created: " << timeCreated << "\n";
 }
 
