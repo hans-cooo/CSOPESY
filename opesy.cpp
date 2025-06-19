@@ -26,8 +26,8 @@ void initialize() {
     cout << "initialize command recognized. Doing Something." << "\n";
 }
 
-void schedulerTest() {
-    cout << "scheduler-test command recognized. Doing Something." << "\n";
+void schedulerStart() {
+    cout << "scheduler-start command recognized. Doing Something." << "\n";
 }
 
 void schedulerStop() {
@@ -53,7 +53,7 @@ int main() {
         } else if (words[0] == "initialize") {
             initialize();
         } else if (words[0] == "screen") {
-            if(words.size() != 3) { // Check if screen has 3 arguments
+            if(words.size() < 2) { // Check if screen has less than 2 arguments
                 cout << "Invalid syntax." << "\n";
             }
             else{
@@ -99,12 +99,17 @@ int main() {
                             cout << "- " << s.getName() << "\n";
                         }
                     }
+                } else if (words[1] == "-ls"){ // Add behavior to list all screens
+                    cout << "Current screens:\n"; //Temporary behavior
+                    for (const auto& s : screens) {
+                        cout << "- " << s.getName() << "\n";
+                    }
                 } else {
                     cout << "Invalid option for screen command." << "\n";
                 }
             }
-        } else if (words[0] == "scheduler-test") {
-            schedulerTest();
+        } else if (words[0] == "scheduler-start") {
+            schedulerStart();
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();
         } else if (words[0] == "report-util") {
