@@ -28,7 +28,7 @@ string getCurrentTime() {
     tm *now_tm = localtime(&now_c);
 
     char buffer[100];
-    strftime(buffer, sizeof(buffer), "%m/%d/%Y, %I:%M:%S %p", now_tm);
+    strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S %p", now_tm);
     return string(buffer);
 }
 

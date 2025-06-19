@@ -9,13 +9,14 @@ using namespace std;
 
 Screen::Screen(string name, string timeCreated) {
     this->name = name;
-    this->instruction = "10/100"; // Placeholder for demonstration
+    this->curr_instruction = 0;
+    this->num_instructions = 0;
     this->timeCreated = timeCreated;
 }
 
 void Screen::displayDetails() {
     cout << "Process Name: " << name << "\n";
-    cout << "Line of Instruction: " << instruction << "\n";
+    cout << "Line of Instruction: " << curr_instruction << "\n";
     cout << "Time Created: " << timeCreated << "\n";
 }
 
@@ -26,18 +27,26 @@ void Screen::startScreen() {
     getline(cin, command);
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
 
-    while(words[0] != "exit"){ // Currently, the only command that exists for screen is exit
+    while(words[0] != "exit"){ 
         if (words[0] == "clear") {
             clearScreen();
             displayDetails();
         } else if (words[0] == "exit") {
             clearScreen();
             return; // Exit the screen;
+        } else if (words[0] == "print") { 
+            /*Print command will print "Hello world from [screen name]" n times into a new text file that is named after the screen name
+            format of the command is print n (with n as the number of prints)*/ 
+            // For now, it sets the num_instructions to the value given by the user 
+            if (words.size() != 2) {
+                cout << "Invalid syntax. Use: print n" << "\n";
+            } else {
+                int n = stoi(words[1]); // stoi converts string to integer
+                num_instructions = n;
+            }
         } else {
             cout << "Invalid command." << "\n";
         }
-
-
 
         words.clear();
         cout << "Enter a command: ";

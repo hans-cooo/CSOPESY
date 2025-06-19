@@ -10,7 +10,8 @@ using namespace std;
 
 class Screen {
     string name;
-    string instruction;
+    int curr_instruction;
+    int num_instructions;
     string timeCreated;
 
     public:
