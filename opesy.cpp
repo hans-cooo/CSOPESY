@@ -90,6 +90,28 @@ int main() {
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
     vector<Screen> screens; 
 
+    // Processes for Week 6 Group Homework
+    Screen process01("process01", getCurrentTime());
+    Screen process02("process02", getCurrentTime());
+    Screen process03("process03", getCurrentTime());
+    Screen process04("process04", getCurrentTime());
+    Screen process05("process05", getCurrentTime());
+    Screen process06("process06", getCurrentTime());
+    Screen process07("process07", getCurrentTime());
+    Screen process08("process08", getCurrentTime());
+    Screen process09("process09", getCurrentTime());
+    Screen process10("process10", getCurrentTime());
+    screens.push_back(process01);
+    screens.push_back(process02);
+    screens.push_back(process03);
+    screens.push_back(process04);
+    screens.push_back(process05);
+    screens.push_back(process06);
+    screens.push_back(process07);
+    screens.push_back(process08);
+    screens.push_back(process09);
+    screens.push_back(process10);
+
     while (words[0] != "exit") {
         if (words[0] == "clear") {
             clearScreen();
@@ -180,5 +202,13 @@ int main() {
         getline(cin, command);
         words = split_sentence(command);
     }
+
+    if (schedulerRunning) {
+        schedulerRunning = false;
+        if (schedulerThread.joinable()) {
+            schedulerThread.join();
+        }
+    }   
+
     return 0;
 }
