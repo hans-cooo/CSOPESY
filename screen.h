@@ -12,6 +12,7 @@ class Screen {
     string name;
     int curr_instruction;
     int num_instructions;
+    int assignedCore = -1; // -1 means unassigned
     string timeCreated;
     bool finished;
     bool running;
@@ -20,13 +21,14 @@ class Screen {
         Screen(string name, string timeCreated);
         void displayDetails();
         void startScreen();
-        void doProcess();
+        void doProcess(int coreID);
         string getName() const;
         string getTimeCreated() const;
         bool isFinished() const;
         bool isRunning() const;
         int getCurrInstruction() const;
         int getNumInstructions() const;
+        int getAssignedCore() const;
 };
 
 #endif

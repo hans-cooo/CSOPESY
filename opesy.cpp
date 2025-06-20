@@ -13,7 +13,7 @@
 using namespace std;
 
 atomic<bool> schedulerRunning(false);  // Shared flag to signal scheduler to stop
-thread schedulerThread;                // Global thread handle
+thread schedulerThread;
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -31,20 +31,45 @@ void initialize() {
     cout << "initialize command recognized. Doing Something." << "\n";
 }
 
-void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
-    cout << "scheduler-start command recognized. Doing Something." << "\n"; // Temporary, used to test doProcess function
-    schedulerRunning = true;
-    for (auto& screen : screens) {
-        while(!screen.isFinished()) {
-            screen.doProcess();
+void fcfsCore(vector<Screen>& screens, int coreNumber) {
+    while (schedulerRunning) {
+        for(auto& screen : screens) {
+            if (!screen.isRunning() && !screen.isFinished()) {
+                while (!screen.isFinished()) { // fcfs logic, process until finished
+                    screen.doProcess(coreNumber);  
+                }
+                break;
+            }
         }
+    }
+}
+
+void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
+    cout << "scheduler-start command recognized." << "\n";
+    schedulerRunning = true;
+    
+    if(scheduler == "fcfs") {
+        vector<thread> cores;
+
+        for (int i = 0; i < num_cpu; ++i) {
+            cores.emplace_back(fcfsCore, ref(screens), i);
+        }
+
+        for (auto& core : cores) {
+            if (core.joinable()) {
+                core.join();
+            }
+        }
+    } else if(scheduler == "rr") {
+        cout << "Round Robin scheduling is not implemented yet." << "\n";
+        schedulerRunning = false;
     }
 
     cout << "Scheduler finished.\n";
 }
 
 void schedulerStop() {
-    cout << "scheduler-stop command recognized. Doing Something." << "\n";
+    cout << "scheduler-stop command recognized." << "\n";
     schedulerRunning = false;
 
     if (schedulerThread.joinable()) {
@@ -119,10 +144,11 @@ int main() {
                         }
                     }
                 } else if (words[1] == "-ls"){ // Behavior to list all screens
+                    cout << "---------------------------------------------------------------------------" << "\n";
                     cout << "Running processes:\n"; 
                     for (const auto& s : screens) {
                         if(s.isRunning()) {
-                            cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Core: 0    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+                            cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Core: " << s.getAssignedCore() << "    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
                         }
                     }
                     cout << "\nFinished processes:\n"; 
@@ -131,6 +157,7 @@ int main() {
                             cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
                         }
                     }
+                    cout << "---------------------------------------------------------------------------" << "\n";
                 } else {
                     cout << "Invalid option for screen command." << "\n";
                 }

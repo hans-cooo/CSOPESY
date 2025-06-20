@@ -25,7 +25,7 @@ void Screen::displayDetails() {
     cout << "Time Created: " << timeCreated << "\n";
 }
 
-void Screen::doProcess() {
+void Screen::doProcess(int coreID) {
     // This function increments the curr_instruction and checks if the process is finished
     // It also prints the current time using getCurrentTime(), the core (thread) it is running on, and "Hello world from [screen name]". 
     // This gets printed to a text file named after the screen name.
@@ -33,14 +33,13 @@ void Screen::doProcess() {
         if (!running){
             running = true; // Set running to true when the process starts
         }
-
+        assignedCore = coreID; // Assign the core ID to the screen
         ofstream outfile(name + ".txt", ios::app);
         if (outfile.is_open()) {
             string currentTime = getCurrentTime();  // From utils.h
-            int coreNumber = 0; // Temporary core number change when using threads
 
             outfile << "(" << currentTime << ") ";
-            outfile << "Core: " << coreNumber << " ";
+            outfile << "Core: " << assignedCore << " ";
             outfile << "\"Hello world from " << name << "!\"\n";
 
             outfile.close();
@@ -116,4 +115,8 @@ int Screen::getCurrInstruction() const {
 
 int Screen::getNumInstructions() const {
     return num_instructions;
+}
+
+int Screen::getAssignedCore() const {
+    return assignedCore;
 }
