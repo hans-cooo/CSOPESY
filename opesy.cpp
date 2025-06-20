@@ -26,10 +26,12 @@ void initialize() {
     cout << "initialize command recognized. Doing Something." << "\n";
 }
 
-void schedulerStart(Screen& screen) {
+void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
     cout << "scheduler-start command recognized. Doing Something." << "\n"; // Temporary, used to test doProcess function
-    while(!screen.isFinished()) { 
-        screen.doProcess(); 
+    for (auto& screen : screens) {
+        while(!screen.isFinished()) {
+            screen.doProcess();
+        }
     }
 }
 
@@ -103,16 +105,16 @@ int main() {
                         }
                     }
                 } else if (words[1] == "-ls"){ // Add behavior to list all screens
-                    cout << "Current screens:\n"; //Temporary behavior
+                    cout << "Running processes:\n"; //Temporary behavior
                     for (const auto& s : screens) {
-                        cout << s.getName() << "    " << s.getTimeCreated() << "    " << "Core: " << "\n";
+                        cout << s.getName() << "    " << s.getTimeCreated() << "    " << "Core: 0    " << "\n";
                     }
                 } else {
                     cout << "Invalid option for screen command." << "\n";
                 }
             }
         } else if (words[0] == "scheduler-start") {
-            schedulerStart(screens[0]); // Temporary, only starts the first screen
+            schedulerStart(screens, 4, "fcfs"); 
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();
         } else if (words[0] == "report-util") {

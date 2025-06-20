@@ -5,6 +5,8 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <thread>
+#include <chrono>
 using namespace std;
 
 
@@ -52,6 +54,8 @@ void Screen::doProcess() {
             finished = true; 
             running = false; 
         }
+
+        this_thread::sleep_for(chrono::milliseconds(50));
     }
 }
 
