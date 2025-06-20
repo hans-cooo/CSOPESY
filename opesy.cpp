@@ -5,10 +5,15 @@
 #include <ctime>
 #include <iomanip>
 #include <chrono>
+#include <thread>
+#include <atomic>
 #include "screen.h"
-#include "utils.h"
+#include "utils.h" 
 
 using namespace std;
+
+atomic<bool> schedulerRunning(false);  // Shared flag to signal scheduler to stop
+thread schedulerThread;                // Global thread handle
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -28,15 +33,23 @@ void initialize() {
 
 void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
     cout << "scheduler-start command recognized. Doing Something." << "\n"; // Temporary, used to test doProcess function
+    schedulerRunning = true;
     for (auto& screen : screens) {
         while(!screen.isFinished()) {
             screen.doProcess();
         }
     }
+
+    cout << "Scheduler finished.\n";
 }
 
 void schedulerStop() {
     cout << "scheduler-stop command recognized. Doing Something." << "\n";
+    schedulerRunning = false;
+
+    if (schedulerThread.joinable()) {
+        schedulerThread.join();  // Wait for thread to finish
+    }
 }
 
 void reportUtil() {
@@ -45,6 +58,7 @@ void reportUtil() {
 
 int main() {
     string command;
+    thread schedulerThread;
     printHeader();
     cout << "Enter a command: ";
     getline(cin, command);
@@ -122,8 +136,11 @@ int main() {
                 }
             }
         } else if (words[0] == "scheduler-start") { 
-            // Needs to be a separate thread so commands like screen -ls can be used while the scheduler is running
-            schedulerStart(screens, 4, "fcfs"); 
+            if (!schedulerRunning) {
+                schedulerThread = thread(schedulerStart, ref(screens), 4, "fcfs");
+            } else {
+                cout << "Scheduler is already running.\n";
+            }
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();
         } else if (words[0] == "report-util") {
