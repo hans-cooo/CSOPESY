@@ -109,3 +109,11 @@ bool Screen::isFinished() const {
 bool Screen::isRunning() const {
     return running;
 }
+
+int Screen::getCurrInstruction() const {
+    return curr_instruction;
+}
+
+int Screen::getNumInstructions() const {
+    return num_instructions;
+}

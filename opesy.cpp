@@ -62,7 +62,7 @@ int main() {
                 cout << "Invalid syntax." << "\n";
             }
             else{
-                if(words[1] == "-r") { // Add behavior to go to created screen
+                if(words[1] == "-r") { // Behavior to go to created screen
                     bool exists = false;
                     for (auto& screen : screens) {
                         if (screen.getName() == words[2]) {
@@ -84,7 +84,7 @@ int main() {
                         cout << "Screen with name '" << words[2] << "' does not exist." << "\n";
                     }
 
-                } else if (words[1] == "-s") { // Add behavior to create a screen
+                } else if (words[1] == "-s") { // Behavior to create a screen
                     bool exists = false;
                     for (const auto& screen : screens) {
                         if (screen.getName() == words[2]) {
@@ -104,16 +104,25 @@ int main() {
                             cout << "- " << s.getName() << "\n";
                         }
                     }
-                } else if (words[1] == "-ls"){ // Add behavior to list all screens
-                    cout << "Running processes:\n"; //Temporary behavior
+                } else if (words[1] == "-ls"){ // Behavior to list all screens
+                    cout << "Running processes:\n"; 
                     for (const auto& s : screens) {
-                        cout << s.getName() << "    " << s.getTimeCreated() << "    " << "Core: 0    " << "\n";
+                        if(s.isRunning()) {
+                            cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Core: 0    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+                        }
+                    }
+                    cout << "\nFinished processes:\n"; 
+                    for (const auto& s : screens) {
+                        if(s.isFinished()) {
+                            cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+                        }
                     }
                 } else {
                     cout << "Invalid option for screen command." << "\n";
                 }
             }
-        } else if (words[0] == "scheduler-start") {
+        } else if (words[0] == "scheduler-start") { 
+            // Needs to be a separate thread so commands like screen -ls can be used while the scheduler is running
             schedulerStart(screens, 4, "fcfs"); 
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();

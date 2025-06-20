@@ -25,6 +25,8 @@ class Screen {
         string getTimeCreated() const;
         bool isFinished() const;
         bool isRunning() const;
+        int getCurrInstruction() const;
+        int getNumInstructions() const;
 };
 
 #endif
