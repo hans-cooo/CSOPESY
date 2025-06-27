@@ -9,7 +9,6 @@
 #include <chrono>
 using namespace std;
 
-
 Screen::Screen(string name, string timeCreated) {
     this->name = name;
     this->curr_instruction = 0;

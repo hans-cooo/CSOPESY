@@ -9,13 +9,19 @@
 #include <chrono>
 #include <thread>
 #include <atomic>
+#include <fstream>
+#include <sstream>
+#include <iomanip> 
 #include "screen.h"
 #include "utils.h" 
+#include "config.h"
+Config config;
 
 using namespace std;
 
 atomic<bool> schedulerRunning(false);  // Shared flag to signal scheduler to stop
 thread schedulerThread;
+bool isInitialized = false;
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -29,11 +35,25 @@ void printHeader() {
     cout << "Type 'exit' to quit, and 'clear' to clear the screen" << "\n";
 }
 
-void initialize() {
-    cout << "initialize command recognized. Doing Something." << "\n";
+
+void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
+                int& batchProcessFreq, int& min_ins, int& max_ins, int& delayPerExec) {
+    cout << "initialize command recognized.\n";
+    if (config.loadFromFile("config.txt")) {
+
+        // Assign to local variables in main
+        num_cpu         = config.num_cpu;
+        scheduler       = config.scheduler;
+        quantumCycles   = config.quantumCycles;
+        batchProcessFreq = config.batchProcessFreq;
+        min_ins         = config.min_ins;
+        max_ins         = config.max_ins;
+        delayPerExec    = config.delayPerExec;
+    }
 }
 
-void fcfsCore(vector<Screen>& screens, int coreNumber) {
+
+void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq) {
     while (schedulerRunning) {
         for(auto& screen : screens) {
             if (!screen.isRunning() && !screen.isFinished()) {
@@ -46,7 +66,7 @@ void fcfsCore(vector<Screen>& screens, int coreNumber) {
     }
 }
 
-void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantumCycles) {
+void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantumCycles, int batchProcessFreq) {
     while (schedulerRunning) {
         Screen* screen = nullptr;
 
@@ -76,7 +96,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantu
     }
 }
 
-void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
+void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq) {
     cout << "scheduler-start command recognized." << "\n";
     schedulerRunning = true;
     
@@ -84,7 +104,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
         vector<thread> cores;
 
         for (int i = 0; i < num_cpu; ++i) {
-            cores.emplace_back(fcfsCore, ref(screens), i);
+            cores.emplace_back(fcfsCore, ref(screens), i, batchProcessFreq);
         }
 
         for (auto& core : cores) {
@@ -104,10 +124,9 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
         }
 
         vector<thread> cores;
-        int quantumCycles = 5; 
 
         for (int i = 0; i < num_cpu; ++i) {
-            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), i, quantumCycles);
+            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), i, quantumCycles, batchProcessFreq);
         }
 
         for (auto& core : cores) {
@@ -134,6 +153,15 @@ void reportUtil() {
 int main() {
     string command;
     thread schedulerThread;
+
+    int num_cpu;
+    string scheduler;
+    int quantumCycles;
+    int batchProcessFreq;
+    int min_ins;
+    int max_ins;
+    int delayPerExec;
+
     printHeader();
     cout << "Enter a command: ";
     getline(cin, command);
@@ -167,7 +195,16 @@ int main() {
             clearScreen();
             printHeader();
         } else if (words[0] == "initialize") {
-            initialize();
+            initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec);
+            // Debuggging
+            // cout << "OVER HERE";
+            // cout << "num_cpu: " << num_cpu << "\n";
+            // cout << "scheduler: " << scheduler << "\n";
+            // cout << "quantumCycles: " << quantumCycles << "\n";
+            // cout << "batchProcessFreq: " << batchProcessFreq << "\n";
+            // cout << "min_ins: " << min_ins << "\n";
+            // cout << "max_ins: " << max_ins << "\n";
+            // cout << "delayPerExec: " << delayPerExec << "\n";
         } else if (words[0] == "screen") {
             if(words.size() < 2) { // Check if screen has less than 2 arguments
                 cout << "Invalid syntax." << "\n";
@@ -236,7 +273,7 @@ int main() {
             }
         } else if (words[0] == "scheduler-start") { 
             if (!schedulerRunning) {
-                schedulerThread = thread(schedulerStart, ref(screens), 4, "rr");
+                schedulerThread = thread(schedulerStart, ref(screens), num_cpu, scheduler, quantumCycles, batchProcessFreq);
             } else {
                 cout << "Scheduler is already running.\n";
             }
