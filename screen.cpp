@@ -27,29 +27,17 @@ void Screen::displayDetails() {
 
 void Screen::doProcess(int coreID) {
     // This function increments the curr_instruction and checks if the process is finished
-    // It also prints the current time using getCurrentTime(), the core (thread) it is running on, and "Hello world from [screen name]". 
-    // This gets printed to a text file named after the screen name.
     if (!finished) {
         if (!running){
             running = true; // Set running to true when the process starts
         }
+
         assignedCore = coreID; // Assign the core ID to the screen
-
-        // Code to print to txt file (Not needed anymore I think)
-        // ofstream outfile(name + ".txt", ios::app);
-        // if (outfile.is_open()) {
-        //     string currentTime = getCurrentTime();  // From utils.h
-
-        //     outfile << "(" << currentTime << ") ";
-        //     outfile << "Core: " << assignedCore << " ";
-        //     outfile << "\"Hello world from " << name << "!\"\n";
-
-        //     outfile.close();
-        // } else {
-        //     cerr << "Error: Could not open file " << name << ".txt for writing.\n";
-        // }
-
         curr_instruction++;
+
+        // Logging
+        string logEntry = "(" + getCurrentTime() + ") Core: " + to_string(coreID) + " Instruction: " + to_string(curr_instruction) + " / " + to_string(num_instructions);
+        logs.push_back(logEntry);  
 
         if (curr_instruction >= num_instructions) {
             finished = true; 
@@ -74,6 +62,18 @@ void Screen::startScreen() {
         } else if (words[0] == "exit") {
             clearScreen();
             return; // Exit the screen;
+        } else if (words[0] == "process-smi") { // Unfinished, needs process ID and process log
+            cout << "Process Name: " << name << "\n";
+
+            cout << "Logs:\n";
+            for (const string& log : logs) {
+                cout << log << "\n";
+            }
+
+            if (finished) {
+                cout << "\nFinished!\n\n";
+            }
+
         } else {
             cout << "Invalid command." << "\n";
         }

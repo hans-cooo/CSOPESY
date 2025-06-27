@@ -16,6 +16,7 @@ class Screen {
     string timeCreated;
     bool finished;
     bool running;
+    vector<string> logs;
 
     public:
         Screen(string name, string timeCreated);
