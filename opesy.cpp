@@ -141,26 +141,26 @@ int main() {
     vector<Screen> screens; 
 
     // Processes used for testing
-    Screen process01("process01", getCurrentTime());
-    Screen process02("process02", getCurrentTime());
-    Screen process03("process03", getCurrentTime());
-    Screen process04("process04", getCurrentTime());
-    Screen process05("process05", getCurrentTime());
-    Screen process06("process06", getCurrentTime());
-    Screen process07("process07", getCurrentTime());
-    Screen process08("process08", getCurrentTime());
-    Screen process09("process09", getCurrentTime());
-    Screen process10("process10", getCurrentTime());
-    screens.push_back(process01);
-    screens.push_back(process02);
-    screens.push_back(process03);
-    screens.push_back(process04);
-    screens.push_back(process05);
-    screens.push_back(process06);
-    screens.push_back(process07);
-    screens.push_back(process08);
-    screens.push_back(process09);
-    screens.push_back(process10);
+    Screen p01("p01", getCurrentTime());
+    Screen p02("p02", getCurrentTime());
+    Screen p03("p03", getCurrentTime());
+    Screen p04("p04", getCurrentTime());
+    Screen p05("p05", getCurrentTime());
+    Screen p06("p06", getCurrentTime());
+    Screen p07("p07", getCurrentTime());
+    Screen p08("p08", getCurrentTime());
+    Screen p09("p09", getCurrentTime());
+    Screen p10("p10", getCurrentTime());
+    screens.push_back(p01);
+    screens.push_back(p02);
+    screens.push_back(p03);
+    screens.push_back(p04);
+    screens.push_back(p05);
+    screens.push_back(p06);
+    screens.push_back(p07);
+    screens.push_back(p08);
+    screens.push_back(p09);
+    screens.push_back(p10);
 
     while (words[0] != "exit") {
         if (words[0] == "clear") {
