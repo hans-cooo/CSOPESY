@@ -34,18 +34,20 @@ void Screen::doProcess(int coreID) {
             running = true; // Set running to true when the process starts
         }
         assignedCore = coreID; // Assign the core ID to the screen
-        ofstream outfile(name + ".txt", ios::app);
-        if (outfile.is_open()) {
-            string currentTime = getCurrentTime();  // From utils.h
 
-            outfile << "(" << currentTime << ") ";
-            outfile << "Core: " << assignedCore << " ";
-            outfile << "\"Hello world from " << name << "!\"\n";
+        // Code to print to txt file (Not needed anymore I think)
+        // ofstream outfile(name + ".txt", ios::app);
+        // if (outfile.is_open()) {
+        //     string currentTime = getCurrentTime();  // From utils.h
 
-            outfile.close();
-        } else {
-            cerr << "Error: Could not open file " << name << ".txt for writing.\n";
-        }
+        //     outfile << "(" << currentTime << ") ";
+        //     outfile << "Core: " << assignedCore << " ";
+        //     outfile << "\"Hello world from " << name << "!\"\n";
+
+        //     outfile.close();
+        // } else {
+        //     cerr << "Error: Could not open file " << name << ".txt for writing.\n";
+        // }
 
         curr_instruction++;
 
@@ -54,7 +56,7 @@ void Screen::doProcess(int coreID) {
             running = false; 
         }
 
-        this_thread::sleep_for(chrono::milliseconds(50));
+        this_thread::sleep_for(chrono::milliseconds(50)); // Delay to simulate processing time
     }
 }
 
@@ -72,16 +74,6 @@ void Screen::startScreen() {
         } else if (words[0] == "exit") {
             clearScreen();
             return; // Exit the screen;
-        } else if (words[0] == "print") { 
-            /*Print command will print "Hello world from [screen name]" n times into a new text file that is named after the screen name
-            format of the command is print n (with n as the number of prints)*/ 
-            // For now, it sets the num_instructions to the value given by the user 
-            if (words.size() != 2) {
-                cout << "Invalid syntax. Use: print n" << "\n";
-            } else {
-                int n = stoi(words[1]); // stoi converts string to integer
-                num_instructions = n;
-            }
         } else {
             cout << "Invalid command." << "\n";
         }
@@ -119,4 +111,8 @@ int Screen::getNumInstructions() const {
 
 int Screen::getAssignedCore() const {
     return assignedCore;
+}
+
+void Screen::setRunningToFalse() {
+    running = false;
 }

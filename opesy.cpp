@@ -2,6 +2,8 @@
 #include <sstream>
 #include <vector>
 #include <string>
+#include <deque>
+#include <mutex>
 #include <ctime>
 #include <iomanip>
 #include <chrono>
@@ -44,6 +46,36 @@ void fcfsCore(vector<Screen>& screens, int coreNumber) {
     }
 }
 
+void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantumCycles) {
+    while (schedulerRunning) {
+        Screen* screen = nullptr;
+
+        {
+            lock_guard<mutex> lock(queueMutex);
+            if (!queue.empty()) {
+                screen = queue.front();
+                queue.pop_front();
+            }
+        }
+
+        if (screen != nullptr && !screen->isFinished()) {
+            // Simulate time slice: allow only `quantumCycles` number of instructions
+            for (int i = 0; i < quantumCycles && !screen->isFinished(); ++i) {
+                screen->doProcess(coreNumber);
+            }
+
+            // Move screen to the back of the deque if not finished
+            if (!screen->isFinished()) {
+                lock_guard<mutex> lock(queueMutex);
+                screen->setRunningToFalse(); 
+                queue.push_back(screen);
+            }
+        }
+
+        this_thread::sleep_for(chrono::milliseconds(10)); 
+    }
+}
+
 void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
     cout << "scheduler-start command recognized." << "\n";
     schedulerRunning = true;
@@ -61,8 +93,26 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler) {
             }
         }
     } else if(scheduler == "rr") {
-        cout << "Round Robin scheduling is not implemented yet." << "\n";
-        schedulerRunning = false;
+        deque<Screen*> screenQueue;
+        mutex queueMutex;
+
+        // Put screen pointers from vector into the deque
+        for (auto& screen : screens) {
+            if (!screen.isFinished()) {
+                screenQueue.push_back(&screen);
+            }
+        }
+
+        vector<thread> cores;
+        int quantumCycles = 5; 
+
+        for (int i = 0; i < num_cpu; ++i) {
+            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), i, quantumCycles);
+        }
+
+        for (auto& core : cores) {
+            if (core.joinable()) core.join();
+        }
     }
 
     cout << "Scheduler finished.\n";
@@ -90,7 +140,7 @@ int main() {
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
     vector<Screen> screens; 
 
-    // Processes for Week 6 Group Homework
+    // Processes used for testing
     Screen process01("process01", getCurrentTime());
     Screen process02("process02", getCurrentTime());
     Screen process03("process03", getCurrentTime());
@@ -186,7 +236,7 @@ int main() {
             }
         } else if (words[0] == "scheduler-start") { 
             if (!schedulerRunning) {
-                schedulerThread = thread(schedulerStart, ref(screens), 4, "fcfs");
+                schedulerThread = thread(schedulerStart, ref(screens), 4, "rr");
             } else {
                 cout << "Scheduler is already running.\n";
             }

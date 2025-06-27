@@ -29,6 +29,7 @@ class Screen {
         int getCurrInstruction() const;
         int getNumInstructions() const;
         int getAssignedCore() const;
+        void setRunningToFalse();
 };
 
 #endif
