@@ -1,3 +1,7 @@
+#include <fstream>
+#include <vector>
+#include <string>
+#include "screen.h"
 #include "utils.h"
 
 using namespace std;
@@ -34,4 +38,34 @@ string getCurrentTime() {
 
 void clearScreen() {
     cout << "\033[2J\033[1;1H"; // ANSI escape code to clear the screen
+}
+
+void reportUtilToFile(const vector<Screen>& screens, const string& filename = "report.txt") {
+    ofstream out(filename);
+    if (!out.is_open()) {
+        cerr << "Failed to open report file for writing.\n";
+        return;
+    }
+
+    out << "---------------------------------------------------------------------------\n";
+    out << "Running processes:\n";
+    for (const auto& s : screens) {
+        if (s.isRunning()) {
+            out << s.getName() << "    (" << s.getTimeCreated() << ")    "
+                << "Core: " << s.getAssignedCore() << "    "
+                << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+        }
+    }
+
+    out << "\nFinished processes:\n";
+    for (const auto& s : screens) {
+        if (s.isFinished()) {
+            out << s.getName() << "    (" << s.getTimeCreated() << ")    "
+                << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+        }
+    }
+
+    out << "---------------------------------------------------------------------------\n";
+
+    out.close();
 }

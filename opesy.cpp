@@ -62,12 +62,13 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
 }
 
 
-void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int numInstructions) {
+void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int min_ins, int max_ins) {
     int cycleCounter = 0;
 
     while (schedulerRunning) {
         for(auto& screen : screens) {
             if (!screen.isRunning() && !screen.isFinished()) {
+
                 while (!screen.isFinished()) { // fcfs logic, process until finished
                     screen.doProcess(coreNumber);  
                     cycleCounter++;
@@ -75,9 +76,10 @@ void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int
                     // Generate new process if frequency is reached
                     if (batchProcessFreq > 0 && cycleCounter % batchProcessFreq == 0) {
                         string name = "auto_p" + to_string(rand() % 10000);
+                        int numInstructions = generateInstructions(min_ins, max_ins);
                         Screen newScreen(name, getCurrentTime(), numInstructions);
                         screens.push_back(newScreen);
-                        // cout << "Generated process: " << name << " with " << numInstructions << " instructions.\n";
+                        cout << "Generated process: " << name << " with " << numInstructions << " instructions.\n";
                     }
 
                 }
@@ -116,7 +118,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantu
 
                     lock_guard<mutex> lock(queueMutex);
                     queue.push_back(newScreen);
-                    // cout << "Generated process: " << name << " with " << ins << " instructions.\n";
+                    cout << "Generated process: " << name << " with " << ins << " instructions.\n";
                 }
             }
 
@@ -139,7 +141,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
         vector<thread> cores;
 
         for (int i = 0; i < num_cpu; ++i) {
-            cores.emplace_back(fcfsCore, ref(screens), i, batchProcessFreq, generateInstructions(min_ins, max_ins));
+            cores.emplace_back(fcfsCore, ref(screens), i, batchProcessFreq, min_ins, max_ins);
         }
 
         for (auto& core : cores) {
@@ -181,11 +183,11 @@ void schedulerStop() {
     }
 }
 
-void reportUtil() {
-    cout << "report-util command recognized. Doing Something." << "\n";
+void reportUtil(const vector<Screen>& screens) {
+    cout << "report-util command recognized." << "\n";
+    reportUtilToFile(screens, "report.txt");
+    cout << "Process utilization report saved to report.txt\n";
 }
-
-
 
 int main() {
     string command;
@@ -207,27 +209,32 @@ int main() {
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
     vector<Screen> screens; 
 
-    // Processes used for testing
-    // Screen p01("p01", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p02("p02", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p03("p03", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p04("p04", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p05("p05", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p06("p06", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p07("p07", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p08("p08", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p09("p09", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p10("p10", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // screens.push_back(p01);
-    // screens.push_back(p02);
-    // screens.push_back(p03);
-    // screens.push_back(p04);
-    // screens.push_back(p05);
-    // screens.push_back(p06);
-    // screens.push_back(p07);
-    // screens.push_back(p08);
-    // screens.push_back(p09);
-    // screens.push_back(p10);
+    // Debugging for initialize to work
+    initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec);
+
+    // Maybe run these processes inside the initialize function as well for Debugging?
+
+    // Debugging, Processes used for testing
+    Screen p01("p01", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p02("p02", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p03("p03", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p04("p04", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p05("p05", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p06("p06", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p07("p07", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p08("p08", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p09("p09", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    Screen p10("p10", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    screens.push_back(p01);
+    screens.push_back(p02);
+    screens.push_back(p03);
+    screens.push_back(p04);
+    screens.push_back(p05);
+    screens.push_back(p06);
+    screens.push_back(p07);
+    screens.push_back(p08);
+    screens.push_back(p09);
+    screens.push_back(p10);
 
     while (words[0] != "exit") {
         if (words[0] == "clear") {
@@ -282,7 +289,7 @@ int main() {
                         }
                     }
                     if (!exists) {
-                        Screen newScreen(words[2], getCurrentTime(), numInstructions);
+                        Screen newScreen(words[2], getCurrentTime(), generateInstructions(min_ins, max_ins));
                         screens.push_back(newScreen);
                         cout << "Screen '" << words[2] << "' created at " << getCurrentTime() << "." << "\n";
 
@@ -321,7 +328,7 @@ int main() {
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();
         } else if (words[0] == "report-util") {
-            reportUtil();
+            reportUtil(screens);
         } else {
             cout << "Invalid command." << "\n";
         }
