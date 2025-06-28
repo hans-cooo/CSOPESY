@@ -48,7 +48,7 @@ bool Config::loadFromFile(const string& filename) {
             min_ins = stoi(rest_of_line);
         } else if (key == "max_ins") {
             max_ins = stoi(rest_of_line);
-        } else if (key == "delayPerExec") {
+        } else if (key == "delay_per_exec") {
             delayPerExec = stoi(rest_of_line);
         } else {
             cerr << "Unknown config key: " << key << "\n";

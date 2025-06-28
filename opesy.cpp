@@ -12,6 +12,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip> 
+#include <random>
 #include "screen.h"
 #include "utils.h" 
 #include "config.h"
@@ -35,6 +36,14 @@ void printHeader() {
     cout << "Type 'exit' to quit, and 'clear' to clear the screen" << "\n";
 }
 
+int generateInstructions(int min_ins, int max_ins) {
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(min_ins, max_ins);
+
+    return dist(gen);
+}
+
 
 void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
                 int& batchProcessFreq, int& min_ins, int& max_ins, int& delayPerExec) {
@@ -53,12 +62,24 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
 }
 
 
-void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq) {
+void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int numInstructions) {
+    int cycleCounter = 0;
+
     while (schedulerRunning) {
         for(auto& screen : screens) {
             if (!screen.isRunning() && !screen.isFinished()) {
                 while (!screen.isFinished()) { // fcfs logic, process until finished
                     screen.doProcess(coreNumber);  
+                    cycleCounter++;
+
+                    // Generate new process if frequency is reached
+                    if (batchProcessFreq > 0 && cycleCounter % batchProcessFreq == 0) {
+                        string name = "auto_p" + to_string(rand() % 10000);
+                        Screen newScreen(name, getCurrentTime(), numInstructions);
+                        screens.push_back(newScreen);
+                        // cout << "Generated process: " << name << " with " << numInstructions << " instructions.\n";
+                    }
+
                 }
                 break;
             }
@@ -66,7 +87,12 @@ void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq) {
     }
 }
 
-void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantumCycles, int batchProcessFreq) {
+// cpuCycle % delayPerExec == 0
+
+void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantumCycles, 
+    int batchProcessFreq, int min_ins, int max_ins) {
+    int cycleCounter = 0;
+
     while (schedulerRunning) {
         Screen* screen = nullptr;
 
@@ -79,24 +105,33 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, int coreNumber, int quantu
         }
 
         if (screen != nullptr && !screen->isFinished()) {
-            // Simulate time slice: allow only `quantumCycles` number of instructions
             for (int i = 0; i < quantumCycles && !screen->isFinished(); ++i) {
                 screen->doProcess(coreNumber);
+                cycleCounter++;
+
+                if (batchProcessFreq > 0 && cycleCounter % batchProcessFreq == 0) {
+                    string name = "auto_p" + to_string(rand() % 10000);
+                    int ins = generateInstructions(min_ins, max_ins);
+                    Screen* newScreen = new Screen(name, getCurrentTime(), ins);
+
+                    lock_guard<mutex> lock(queueMutex);
+                    queue.push_back(newScreen);
+                    // cout << "Generated process: " << name << " with " << ins << " instructions.\n";
+                }
             }
 
-            // Move screen to the back of the deque if not finished
             if (!screen->isFinished()) {
                 lock_guard<mutex> lock(queueMutex);
-                screen->setRunningToFalse(); 
+                screen->setRunningToFalse();
                 queue.push_back(screen);
             }
         }
 
-        this_thread::sleep_for(chrono::milliseconds(10)); 
+        this_thread::sleep_for(chrono::milliseconds(10));
     }
 }
 
-void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq) {
+void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq, int min_ins, int max_ins) {
     cout << "scheduler-start command recognized." << "\n";
     schedulerRunning = true;
     
@@ -104,7 +139,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
         vector<thread> cores;
 
         for (int i = 0; i < num_cpu; ++i) {
-            cores.emplace_back(fcfsCore, ref(screens), i, batchProcessFreq);
+            cores.emplace_back(fcfsCore, ref(screens), i, batchProcessFreq, generateInstructions(min_ins, max_ins));
         }
 
         for (auto& core : cores) {
@@ -126,7 +161,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
         vector<thread> cores;
 
         for (int i = 0; i < num_cpu; ++i) {
-            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), i, quantumCycles, batchProcessFreq);
+            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), i, quantumCycles, batchProcessFreq, min_ins, max_ins);
         }
 
         for (auto& core : cores) {
@@ -150,6 +185,8 @@ void reportUtil() {
     cout << "report-util command recognized. Doing Something." << "\n";
 }
 
+
+
 int main() {
     string command;
     thread schedulerThread;
@@ -162,6 +199,8 @@ int main() {
     int max_ins;
     int delayPerExec;
 
+    int numInstructions;
+
     printHeader();
     cout << "Enter a command: ";
     getline(cin, command);
@@ -169,26 +208,26 @@ int main() {
     vector<Screen> screens; 
 
     // Processes used for testing
-    Screen p01("p01", getCurrentTime());
-    Screen p02("p02", getCurrentTime());
-    Screen p03("p03", getCurrentTime());
-    Screen p04("p04", getCurrentTime());
-    Screen p05("p05", getCurrentTime());
-    Screen p06("p06", getCurrentTime());
-    Screen p07("p07", getCurrentTime());
-    Screen p08("p08", getCurrentTime());
-    Screen p09("p09", getCurrentTime());
-    Screen p10("p10", getCurrentTime());
-    screens.push_back(p01);
-    screens.push_back(p02);
-    screens.push_back(p03);
-    screens.push_back(p04);
-    screens.push_back(p05);
-    screens.push_back(p06);
-    screens.push_back(p07);
-    screens.push_back(p08);
-    screens.push_back(p09);
-    screens.push_back(p10);
+    // Screen p01("p01", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p02("p02", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p03("p03", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p04("p04", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p05("p05", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p06("p06", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p07("p07", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p08("p08", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p09("p09", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // Screen p10("p10", getCurrentTime(), generateInstructions(min_ins, max_ins));
+    // screens.push_back(p01);
+    // screens.push_back(p02);
+    // screens.push_back(p03);
+    // screens.push_back(p04);
+    // screens.push_back(p05);
+    // screens.push_back(p06);
+    // screens.push_back(p07);
+    // screens.push_back(p08);
+    // screens.push_back(p09);
+    // screens.push_back(p10);
 
     while (words[0] != "exit") {
         if (words[0] == "clear") {
@@ -197,14 +236,15 @@ int main() {
         } else if (words[0] == "initialize") {
             initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec);
             // Debuggging
-            // cout << "OVER HERE";
-            // cout << "num_cpu: " << num_cpu << "\n";
-            // cout << "scheduler: " << scheduler << "\n";
-            // cout << "quantumCycles: " << quantumCycles << "\n";
-            // cout << "batchProcessFreq: " << batchProcessFreq << "\n";
-            // cout << "min_ins: " << min_ins << "\n";
-            // cout << "max_ins: " << max_ins << "\n";
-            // cout << "delayPerExec: " << delayPerExec << "\n";
+            cout << "OVER HERE LOOK AT ME GOOOOOOOOOOOOOOOOO play Yakuza 0" << "\n";
+            cout << "num_cpu: " << num_cpu << "\n";
+            cout << "scheduler: " << scheduler << "\n";
+            cout << "quantumCycles: " << quantumCycles << "\n";
+            cout << "batchProcessFreq: " << batchProcessFreq << "\n";
+            cout << "min_ins: " << min_ins << "\n";
+            cout << "max_ins: " << max_ins << "\n";
+            cout << "delayPerExec: " << delayPerExec << "\n";
+            cout << "test numInstructions: " << generateInstructions(min_ins, max_ins) << "\n";
         } else if (words[0] == "screen") {
             if(words.size() < 2) { // Check if screen has less than 2 arguments
                 cout << "Invalid syntax." << "\n";
@@ -242,7 +282,7 @@ int main() {
                         }
                     }
                     if (!exists) {
-                        Screen newScreen(words[2], getCurrentTime());
+                        Screen newScreen(words[2], getCurrentTime(), numInstructions);
                         screens.push_back(newScreen);
                         cout << "Screen '" << words[2] << "' created at " << getCurrentTime() << "." << "\n";
 
@@ -273,7 +313,8 @@ int main() {
             }
         } else if (words[0] == "scheduler-start") { 
             if (!schedulerRunning) {
-                schedulerThread = thread(schedulerStart, ref(screens), num_cpu, scheduler, quantumCycles, batchProcessFreq);
+                schedulerThread = thread(schedulerStart, ref(screens), num_cpu, 
+                scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins);
             } else {
                 cout << "Scheduler is already running.\n";
             }

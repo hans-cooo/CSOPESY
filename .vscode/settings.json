@@ -60,6 +60,7 @@
         "stop_token": "cpp",
         "string": "cpp",
         "thread": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "random": "cpp"
     }
 }

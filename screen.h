@@ -19,7 +19,7 @@ class Screen {
     vector<string> logs;
 
     public:
-        Screen(string name, string timeCreated);
+        Screen(string name, string timeCreated, int numInstructions);
         void displayDetails();
         void startScreen();
         void doProcess(int coreID);
