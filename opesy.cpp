@@ -49,7 +49,7 @@ int generateInstructions(int min_ins, int max_ins) {
 
 
 void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
-                int& batchProcessFreq, int& min_ins, int& max_ins, int& delayPerExec) {
+                int& batchProcessFreq, int& min_ins, int& max_ins, int& delayPerExec, bool& isInitialized) {
     cout << "initialize command recognized.\n";
     if (config.loadFromFile("config.txt")) {
 
@@ -61,6 +61,7 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         min_ins         = config.min_ins;
         max_ins         = config.max_ins;
         delayPerExec    = config.delayPerExec;
+        isInitialized = true;
     }
 }
 
@@ -130,7 +131,6 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
             // cout << "Generated: " << name << " with " << ins << " instructions.\n";
         }
     }
-    
     if(scheduler == "fcfs") {
         vector<thread> cores;
 
@@ -158,7 +158,8 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
         vector<thread> cores;
 
         for (int i = 0; i < num_cpu; ++i) {
-            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), ref(screens), ref(screensMutex), i, quantumCycles, batchProcessFreq, min_ins, max_ins);
+            cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), ref(screens), 
+            ref(screensMutex), i, quantumCycles, batchProcessFreq, min_ins, max_ins);
         }
 
         for (auto& core : cores) {
@@ -235,7 +236,7 @@ int main() {
             clearScreen();
             printHeader();
         } else if (words[0] == "initialize") {
-            initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec);
+            initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec, isInitialized);
             // Debuggging
             // cout << "OVER HERE LOOK AT ME GOOOOOOOOOOOOOOOOO play Yakuza 0" << "\n";
             // cout << "num_cpu: " << num_cpu << "\n";
@@ -324,8 +325,12 @@ int main() {
             }
         } else if (words[0] == "scheduler-start") { 
             if (!schedulerRunning) {
-                schedulerThread = thread(schedulerStart, ref(screens), num_cpu, 
-                scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins);
+                if (isInitialized) {
+                    schedulerThread = thread(schedulerStart, ref(screens), num_cpu, 
+                    scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins);
+                } else {
+                    cout << "Not yet initialized. Run 'initialize' first.\n";
+                }
             } else {
                 cout << "Scheduler is already running.\n";
             }
