@@ -61,6 +61,7 @@
         "string": "cpp",
         "thread": "cpp",
         "vector": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "unordered_set": "cpp"
     }
 }

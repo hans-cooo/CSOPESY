@@ -12,7 +12,7 @@
 std::vector<std::string> split_sentence(std::string sen);
 std::string getCurrentTime();
 void clearScreen();
-void reportUtilToFile(const vector<Screen>& screens, const string& filename);
+void reportUtilToFile(const vector<Screen>& screens, const string& filename, int num_cpu);
 
 
 

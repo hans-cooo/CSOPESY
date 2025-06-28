@@ -13,6 +13,7 @@
 #include <sstream>
 #include <iomanip> 
 #include <random>
+#include <unordered_set>
 #include "screen.h"
 #include "utils.h" 
 #include "config.h"
@@ -80,7 +81,6 @@ void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int
     }
 }
 
-// cpuCycle % delayPerExec == 0
 
 void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, mutex& screensMutex, 
     int coreNumber, int quantumCycles,
@@ -178,9 +178,9 @@ void schedulerStop() {
     }
 }
 
-void reportUtil(const vector<Screen>& screens) {
+void reportUtil(const vector<Screen>& screens, int num_cpu) {
     cout << "report-util command recognized." << "\n";
-    reportUtilToFile(screens, "report.txt");
+    reportUtilToFile(screens, "report.txt", num_cpu);
     cout << "Process utilization report saved to report.txt\n";
 }
 
@@ -297,9 +297,16 @@ int main() {
                 } else if (words[1] == "-ls"){ // Behavior to list all screens
                     cout << "---------------------------------------------------------------------------" << "\n";
                     cout << "Running processes:\n"; 
+                    unordered_set<int> activeCores;
                     for (const auto& s : screens) {
                         if(s.isRunning()) {
                             cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Core: " << s.getAssignedCore() << "    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+                            
+                            int coreID = s.getAssignedCore();
+                            if (coreID >= 0){
+                                activeCores.insert(coreID);
+                            }
+                            
                         }
                     }
                     cout << "\nFinished processes:\n"; 
@@ -308,6 +315,9 @@ int main() {
                             cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
                         }
                     }
+                    float utilization = (num_cpu > 0) ? (static_cast<float>(activeCores.size()) / num_cpu) * 100.0f : 0.0f;
+                    cout << "\nCPU Utilization: " << activeCores.size() << " / " << num_cpu << " cores active (" << utilization << "%)\n";
+
                     cout << "---------------------------------------------------------------------------" << "\n";
                 } else {
                     cout << "Invalid option for screen command." << "\n";
@@ -323,7 +333,7 @@ int main() {
         } else if (words[0] == "scheduler-stop") {
             schedulerStop();
         } else if (words[0] == "report-util") {
-            reportUtil(screens);
+            reportUtil(screens, num_cpu);
         } else {
             cout << "Invalid command." << "\n";
         }

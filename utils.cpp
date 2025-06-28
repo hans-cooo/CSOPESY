@@ -1,6 +1,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
+#include <unordered_set>
 #include "screen.h"
 #include "utils.h"
 
@@ -40,12 +41,14 @@ void clearScreen() {
     cout << "\033[2J\033[1;1H"; // ANSI escape code to clear the screen
 }
 
-void reportUtilToFile(const vector<Screen>& screens, const string& filename = "report.txt") {
+void reportUtilToFile(const vector<Screen>& screens, const string& filename, int num_cpu) {
     ofstream out(filename);
     if (!out.is_open()) {
         cerr << "Failed to open report file for writing.\n";
         return;
     }
+
+    unordered_set<int> activeCores;
 
     out << "---------------------------------------------------------------------------\n";
     out << "Running processes:\n";
@@ -54,6 +57,11 @@ void reportUtilToFile(const vector<Screen>& screens, const string& filename = "r
             out << s.getName() << "    (" << s.getTimeCreated() << ")    "
                 << "Core: " << s.getAssignedCore() << "    "
                 << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+
+            int coreID = s.getAssignedCore();
+            if (coreID >= 0) {
+                activeCores.insert(coreID);
+            }
         }
     }
 
@@ -64,6 +72,10 @@ void reportUtilToFile(const vector<Screen>& screens, const string& filename = "r
                 << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
         }
     }
+
+    // Calculate CPU Utilization
+    float utilization = (num_cpu > 0) ? (static_cast<float>(activeCores.size()) / num_cpu) * 100.0f : 0.0f;
+    out << "\nCPU Utilization: " << activeCores.size() << " / " << num_cpu << " cores active (" << utilization << "%)\n";
 
     out << "---------------------------------------------------------------------------\n";
 
