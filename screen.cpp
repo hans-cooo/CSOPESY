@@ -35,7 +35,7 @@ void Screen::doProcess(int coreID) {
         curr_instruction++;
 
         // Logging
-        string logEntry = "(" + getCurrentTime() + ") Core: " + to_string(coreID) + " Instruction: " + to_string(curr_instruction) + " / " + to_string(num_instructions);
+        string logEntry = "(" + getCurrentTime() + ") Core: " + to_string(coreID) + " \"Hello world from " + name + "!\"";
         logs.push_back(logEntry);  
 
         if (curr_instruction >= num_instructions) {
