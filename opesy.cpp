@@ -54,13 +54,13 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
     if (config.loadFromFile("config.txt")) {
 
         // Assign to local variables in main
-        // num_cpu         = config.num_cpu;
-        // scheduler       = config.scheduler;
-        // quantumCycles   = config.quantumCycles;
-        // batchProcessFreq = config.batchProcessFreq;
-        // min_ins         = config.min_ins;
-        // max_ins         = config.max_ins;
-        // delayPerExec    = config.delayPerExec;
+        num_cpu         = config.num_cpu;
+        scheduler       = config.scheduler;
+        quantumCycles   = config.quantumCycles;
+        batchProcessFreq = config.batchProcessFreq;
+        min_ins         = config.min_ins;
+        max_ins         = config.max_ins;
+        delayPerExec    = config.delayPerExec;
     }
 }
 
@@ -238,14 +238,14 @@ int main() {
             initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec);
             // Debuggging
             // cout << "OVER HERE LOOK AT ME GOOOOOOOOOOOOOOOOO play Yakuza 0" << "\n";
-            cout << "num_cpu: " << num_cpu << "\n";
-            cout << "scheduler: " << scheduler << "\n";
-            cout << "quantumCycles: " << quantumCycles << "\n";
-            cout << "batchProcessFreq: " << batchProcessFreq << "\n";
-            cout << "min_ins: " << min_ins << "\n";
-            cout << "max_ins: " << max_ins << "\n";
-            cout << "delayPerExec: " << delayPerExec << "\n";
-            cout << "test numInstructions: " << generateInstructions(min_ins, max_ins) << "\n";
+            // cout << "num_cpu: " << num_cpu << "\n";
+            // cout << "scheduler: " << scheduler << "\n";
+            // cout << "quantumCycles: " << quantumCycles << "\n";
+            // cout << "batchProcessFreq: " << batchProcessFreq << "\n";
+            // cout << "min_ins: " << min_ins << "\n";
+            // cout << "max_ins: " << max_ins << "\n";
+            // cout << "delayPerExec: " << delayPerExec << "\n";
+            // cout << "test numInstructions: " << generateInstructions(min_ins, max_ins) << "\n";
         } else if (words[0] == "screen") {
             if(words.size() < 2) { // Check if screen has less than 2 arguments
                 cout << "Invalid syntax." << "\n";
