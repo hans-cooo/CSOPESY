@@ -54,13 +54,13 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
     if (config.loadFromFile("config.txt")) {
 
         // Assign to local variables in main
-        num_cpu         = config.num_cpu;
-        scheduler       = config.scheduler;
-        quantumCycles   = config.quantumCycles;
-        batchProcessFreq = config.batchProcessFreq;
-        min_ins         = config.min_ins;
-        max_ins         = config.max_ins;
-        delayPerExec    = config.delayPerExec;
+        // num_cpu         = config.num_cpu;
+        // scheduler       = config.scheduler;
+        // quantumCycles   = config.quantumCycles;
+        // batchProcessFreq = config.batchProcessFreq;
+        // min_ins         = config.min_ins;
+        // max_ins         = config.max_ins;
+        // delayPerExec    = config.delayPerExec;
     }
 }
 
@@ -127,7 +127,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
             Screen newScreen(name, getCurrentTime(), ins);
             screens.push_back(newScreen);
             ++generatedProcessCount;
-            cout << "Generated: " << name << " with " << ins << " instructions.\n";
+            // cout << "Generated: " << name << " with " << ins << " instructions.\n";
         }
     }
     
@@ -186,7 +186,6 @@ void reportUtil(const vector<Screen>& screens, int num_cpu) {
 
 int main() {
     string command;
-    thread schedulerThread;
 
     int num_cpu;
     string scheduler;
