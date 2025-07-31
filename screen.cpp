@@ -17,6 +17,7 @@ Screen::Screen(string name, string timeCreated, int numInstructions, int require
     this->running = false;
     this->requiredMemory = requiredMemory;
     this->finished = false;
+    this->memStartIndex = -1;
 }
 
 void Screen::displayDetails() {
@@ -115,4 +116,16 @@ int Screen::getAssignedCore() const {
 
 void Screen::setRunningToFalse() {
     running = false;
+}
+
+int Screen::getRequiredMemory() const {
+    return requiredMemory;
+}
+
+int Screen::getMemStartIndex() const {
+    return memStartIndex;
+}
+
+void Screen::setMemStartIndex(int index) {
+    memStartIndex = index;
 }

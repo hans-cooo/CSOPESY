@@ -106,12 +106,24 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
         }
 
         if (screen != nullptr && !screen->isFinished()) {
+
+            if (screen->getMemStartIndex() == -1) {
+                if (!allocateMemory(screen)) {
+                    // Could not allocate memory, requeue and skip
+                    lock_guard<mutex> lock(queueMutex);
+                    queue.push_back(screen);
+                    continue;
+                }
+            }
+            
             for (int i = 0; i < quantumCycles && !screen->isFinished(); ++i) {
                 screen->doProcess(coreNumber);
                 cycleCounter++;
             }
 
-            if (!screen->isFinished()) {
+            if (screen->isFinished()) {
+                deallocateMemory(screen);
+            } else {
                 lock_guard<mutex> lock(queueMutex);
                 screen->setRunningToFalse();
                 queue.push_back(screen);
@@ -119,6 +131,44 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
         }
 
         this_thread::sleep_for(chrono::milliseconds(10));
+    }
+}
+
+bool allocateMemory(Screen* screen) {
+    int required = screen->getRequiredMemory();
+    int maxIndex = memory.size() - required + 1;
+
+    for (int i = 0; i < maxIndex; ++i) {
+        bool found = true;
+
+        // Check if required contiguous "NULL" blocks exist
+        for (int j = 0; j < required; ++j) {
+            if (memory[i + j] != "NULL") {
+                found = false;
+                break;
+            }
+        }
+
+        if (found) {
+            // Allocate: mark memory with the process name
+            for (int j = 0; j < required; ++j) {
+                memory[i + j] = screen->getName();
+            }
+
+            screen->setMemStartIndex(i);  // Store this to simplify deallocation later
+            return true;
+        }
+    }
+
+    return false; // Not enough contiguous space
+}
+
+void deallocateMemory(Screen* screen) {
+    int start = screen->getMemStartIndex();
+    int required = screen->getRequiredMemory();
+
+    for (int i = start; i < start + required; ++i) {
+        memory[i] = "NULL";
     }
 }
 
@@ -212,49 +262,12 @@ int main() {
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
     vector<Screen> screens; 
 
-    // Debugging for initialize to work
-    // initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec);
-
-    // Maybe run these processes inside the initialize function as well for Debugging?
-
-    // // Debugging, Processes used for testing
-    // Screen p01("p01", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p02("p02", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p03("p03", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p04("p04", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p05("p05", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p06("p06", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p07("p07", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p08("p08", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p09("p09", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // Screen p10("p10", getCurrentTime(), generateInstructions(min_ins, max_ins));
-    // screens.push_back(p01);
-    // screens.push_back(p02);
-    // screens.push_back(p03);
-    // screens.push_back(p04);
-    // screens.push_back(p05);
-    // screens.push_back(p06);
-    // screens.push_back(p07);
-    // screens.push_back(p08);
-    // screens.push_back(p09);
-    // screens.push_back(p10);
-
     while (words[0] != "exit") {
         if (words[0] == "clear") {
             clearScreen();
             printHeader();
         } else if (words[0] == "initialize") {
             initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec, max_overall_mem, mem_per_frame, mem_per_proc, isInitialized);
-            // Debuggging
-            // cout << "OVER HERE LOOK AT ME GOOOOOOOOOOOOOOOOO play Yakuza 0" << "\n";
-            // cout << "num_cpu: " << num_cpu << "\n";
-            // cout << "scheduler: " << scheduler << "\n";
-            // cout << "quantumCycles: " << quantumCycles << "\n";
-            // cout << "batchProcessFreq: " << batchProcessFreq << "\n";
-            // cout << "min_ins: " << min_ins << "\n";
-            // cout << "max_ins: " << max_ins << "\n";
-            // cout << "delayPerExec: " << delayPerExec << "\n";
-            // cout << "test numInstructions: " << generateInstructions(min_ins, max_ins) << "\n";
         } else if (words[0] == "screen") {
             if(words.size() < 2) { // Check if screen has less than 2 arguments
                 cout << "Invalid syntax." << "\n";

@@ -18,6 +18,7 @@ class Screen {
     bool running;
     vector<string> logs;
     int requiredMemory; 
+    int memStartIndex = -1; // Index when still unassigned
 
     public:
         Screen(string name, string timeCreated, int numInstructions, int requiredMemory);
@@ -32,6 +33,9 @@ class Screen {
         int getNumInstructions() const;
         int getAssignedCore() const;
         void setRunningToFalse();
+        int getRequiredMemory() const;
+        int getMemStartIndex() const;
+        void setMemStartIndex(int index) { memStartIndex = index; }
 };
 
 #endif
