@@ -50,6 +50,12 @@ bool Config::loadFromFile(const string& filename) {
             max_ins = stoi(rest_of_line);
         } else if (key == "delay_per_exec") {
             delayPerExec = stoi(rest_of_line);
+        } else if (key == "max_overall_mem") {
+            max_overall_mem = stoi(rest_of_line);
+        } else if (key == "mem_per_frame") {
+            mem_per_frame = stoi(rest_of_line);
+        } else if (key == "mem_per_proc") {
+            mem_per_proc = stoi(rest_of_line);
         } else {
             cerr << "Unknown config key: " << key << "\n";
             file.ignore(numeric_limits<streamsize>::max(), '\n'); // skip rest of line
@@ -68,4 +74,7 @@ void Config::print() const {
     cout << "min_ins: " << min_ins << "\n";
     cout << "max_ins: " << max_ins << "\n";
     cout << "delayPerExec: " << delayPerExec << "\n";
+    cout << "max_overall_mem: " << max_overall_mem << "\n";
+    cout << "mem_per_frame: " << mem_per_frame << "\n";
+    cout << "mem_per_proc: " << mem_per_proc << "\n";
 }
