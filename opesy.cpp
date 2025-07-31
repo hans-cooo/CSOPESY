@@ -49,7 +49,7 @@ int generateInstructions(int min_ins, int max_ins) {
 
 
 void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
-                int& batchProcessFreq, int& min_ins, int& max_ins, int& delayPerExec, bool& isInitialized) {
+                int& batchProcessFreq, int& min_ins, int& max_ins, int& delayPerExec, int& max_overall_mem, int& mem_per_frame, int& mem_per_proc, bool& isInitialized) {
     cout << "initialize command recognized.\n";
     if (config.loadFromFile("config.txt")) {
 
@@ -61,6 +61,9 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         min_ins         = config.min_ins;
         max_ins         = config.max_ins;
         delayPerExec    = config.delayPerExec;
+        max_overall_mem = config.max_overall_mem;
+        mem_per_frame   = config.mem_per_frame;
+        mem_per_proc    = config.mem_per_proc;
         isInitialized = true;
     }
 }
@@ -195,8 +198,10 @@ int main() {
     int min_ins;
     int max_ins;
     int delayPerExec;
-
     int numInstructions;
+    int max_overall_mem;
+    int mem_per_frame;
+    int mem_per_proc;
 
     printHeader();
     cout << "Enter a command: ";
@@ -236,7 +241,7 @@ int main() {
             clearScreen();
             printHeader();
         } else if (words[0] == "initialize") {
-            initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec, isInitialized);
+            initialize(num_cpu, scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, delayPerExec, max_overall_mem, mem_per_frame, mem_per_proc, isInitialized);
             // Debuggging
             // cout << "OVER HERE LOOK AT ME GOOOOOOOOOOOOOOOOO play Yakuza 0" << "\n";
             // cout << "num_cpu: " << num_cpu << "\n";
