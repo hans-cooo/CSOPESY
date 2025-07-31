@@ -17,9 +17,10 @@ class Screen {
     bool finished;
     bool running;
     vector<string> logs;
+    int requiredMemory; 
 
     public:
-        Screen(string name, string timeCreated, int numInstructions);
+        Screen(string name, string timeCreated, int numInstructions, int requiredMemory);
         void displayDetails();
         void startScreen();
         void doProcess(int coreID);

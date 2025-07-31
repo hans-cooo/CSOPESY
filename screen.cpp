@@ -9,12 +9,13 @@
 #include <chrono>
 using namespace std;
 
-Screen::Screen(string name, string timeCreated, int numInstructions) {
+Screen::Screen(string name, string timeCreated, int numInstructions, int requiredMemory) {
     this->name = name;
     this->curr_instruction = 0;
     this->num_instructions = numInstructions; // Default number of instructions, can be changed later
     this->timeCreated = timeCreated;
     this->running = false;
+    this->requiredMemory = requiredMemory;
     this->finished = false;
 }
 

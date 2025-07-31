@@ -119,7 +119,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
     }
 }
 
-void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq, int min_ins, int max_ins) {
+void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq, int min_ins, int max_ins, int mem_per_proc) {
     cout << "scheduler-start command recognized." << "\n";
     schedulerRunning = true;
 
@@ -128,7 +128,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
         for (int i = 1; i <= maxGeneratedProcesses; ++i) {
             string name = "p" + to_string(i);
             int ins = generateInstructions(min_ins, max_ins);
-            Screen newScreen(name, getCurrentTime(), ins);
+            Screen newScreen(name, getCurrentTime(), ins, mem_per_proc);
             screens.push_back(newScreen);
             ++generatedProcessCount;
             // cout << "Generated: " << name << " with " << ins << " instructions.\n";
@@ -289,7 +289,7 @@ int main() {
                         }
                     }
                     if (!exists) {
-                        Screen newScreen(words[2], getCurrentTime(), generateInstructions(min_ins, max_ins));
+                        Screen newScreen(words[2], getCurrentTime(), generateInstructions(min_ins, max_ins), mem_per_proc);
                         screens.push_back(newScreen);
                         cout << "Screen '" << words[2] << "' created at " << getCurrentTime() << "." << "\n";
 
@@ -332,7 +332,7 @@ int main() {
             if (!schedulerRunning) {
                 if (isInitialized) {
                     schedulerThread = thread(schedulerStart, ref(screens), num_cpu, 
-                    scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins);
+                    scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, mem_per_proc);
                 } else {
                     cout << "Not yet initialized. Run 'initialize' first.\n";
                 }
