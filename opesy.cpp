@@ -18,6 +18,7 @@
 #include "screen.h"
 #include "utils.h" 
 #include "config.h"
+#include <filesystem>
 Config config;
 
 using namespace std;
@@ -29,6 +30,7 @@ atomic<int> generatedProcessCount(0);
 const int maxGeneratedProcesses = 50;
 vector<optional<string>> memory;  // Represents memory blocks
 mutex memoryMutex;
+namespace fs = std::filesystem;
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -128,11 +130,15 @@ void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int
     }
 }
 
+//outfile << "Timestamp: " << getCurrentTime() << "\n";
 
 void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, mutex& screensMutex, 
     int coreNumber, int quantumCycles,
     int batchProcessFreq, int min_ins, int max_ins) {
+
     int cycleCounter = 0;
+
+    fs::create_directory("txt");
 
     while (schedulerRunning) {
         Screen* screen = nullptr;
@@ -155,10 +161,44 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                     continue;
                 }
             }
-            
+
             for (int i = 0; i < quantumCycles && !screen->isFinished(); ++i) {
                 screen->doProcess(coreNumber);
                 cycleCounter++;
+
+                // 🔽 Create memory snapshot log per quantum cycle
+                {
+                    lock_guard<mutex> lock(screensMutex); // Safe access to shared data
+
+                    // Count processes in memory
+                    int memCount = 0;
+                    for (const Screen& s : screens) {
+                        if (s.getMemStartIndex() != -1 && !s.isFinished()) {
+                            memCount++;
+                        }
+                    }
+
+                    // Count unused memory blocks (external fragmentation)
+                    int unusedFrames = 0;
+                    for (const auto& block : memory) {
+                        if (!block.has_value()) {
+                            unusedFrames++;
+                        }
+                    }
+                    int fragmentationKB = (unusedFrames * 16) / 1024;
+
+                    // File output
+                    string filename = "txt/memory_stamp_core" + to_string(coreNumber) + "_cycle" + to_string(cycleCounter) + ".txt";
+                    ofstream outfile(filename);
+                    if (outfile.is_open()) {
+                        outfile << "Timestamp: " << getCurrentTime() << "\n";
+                        outfile << "Core ID: " << coreNumber << "\n";
+                        outfile << "Quantum Cycle: " << cycleCounter << "\n";
+                        outfile << "Processes in Memory: " << memCount << "\n";
+                        outfile << "Total External Fragmentation: " << fragmentationKB << " KB\n\n";
+                        outfile.close();
+                    }
+                }
             }
 
             if (screen->isFinished()) {
@@ -173,6 +213,8 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
         this_thread::sleep_for(chrono::milliseconds(10));
     }
 }
+
+
 
 
 

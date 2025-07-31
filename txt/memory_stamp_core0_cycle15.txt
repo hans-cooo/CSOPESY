@@ -1,0 +1,6 @@
+Timestamp: 07/31/2025 09:59:16 PM
+Core ID: 0
+Quantum Cycle: 15
+Processes in Memory: 4
+Total External Fragmentation: 0 KB
+
