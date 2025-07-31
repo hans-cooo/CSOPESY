@@ -28,6 +28,7 @@ bool isInitialized = false;
 atomic<int> generatedProcessCount(0);
 const int maxGeneratedProcesses = 50;
 vector<optional<string>> memory;  // Represents memory blocks
+mutex memoryMutex;
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -135,6 +136,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
 }
 
 bool allocateMemory(Screen* screen) {
+    lock_guard<mutex> lock(memoryMutex);
     int required = screen->getRequiredMemory();
     int maxIndex = memory.size() - required + 1;
 
@@ -164,6 +166,7 @@ bool allocateMemory(Screen* screen) {
 }
 
 void deallocateMemory(Screen* screen) {
+    lock_guard<mutex> lock(memoryMutex);
     int start = screen->getMemStartIndex();
     int required = screen->getRequiredMemory();
 
