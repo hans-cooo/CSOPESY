@@ -72,6 +72,45 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
     }
 }
 
+bool allocateMemory(Screen* screen) {
+    lock_guard<mutex> lock(memoryMutex);
+    int required = screen->getRequiredMemory();
+    int maxIndex = memory.size() - required + 1;
+
+    for (int i = 0; i < maxIndex; ++i) {
+        bool found = true;
+
+        // Check if required contiguous "NULL" blocks exist
+        for (int j = 0; j < required; ++j) {
+            if (memory[i + j] != "NULL") {
+                found = false;
+                break;
+            }
+        }
+
+        if (found) {
+            // Allocate: mark memory with the process name
+            for (int j = 0; j < required; ++j) {
+                memory[i + j] = screen->getName();
+            }
+
+            screen->setMemStartIndex(i);  // Store this to simplify deallocation later
+            return true;
+        }
+    }
+
+    return false; // Not enough contiguous space
+}
+
+void deallocateMemory(Screen* screen) {
+    lock_guard<mutex> lock(memoryMutex);
+    int start = screen->getMemStartIndex();
+    int required = screen->getRequiredMemory();
+
+    for (int i = start; i < start + required; ++i) {
+        memory[i] = "NULL";
+    }
+}
 
 void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int min_ins, int max_ins) {
     int cycleCounter = 0;
@@ -135,45 +174,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
     }
 }
 
-bool allocateMemory(Screen* screen) {
-    lock_guard<mutex> lock(memoryMutex);
-    int required = screen->getRequiredMemory();
-    int maxIndex = memory.size() - required + 1;
 
-    for (int i = 0; i < maxIndex; ++i) {
-        bool found = true;
-
-        // Check if required contiguous "NULL" blocks exist
-        for (int j = 0; j < required; ++j) {
-            if (memory[i + j] != "NULL") {
-                found = false;
-                break;
-            }
-        }
-
-        if (found) {
-            // Allocate: mark memory with the process name
-            for (int j = 0; j < required; ++j) {
-                memory[i + j] = screen->getName();
-            }
-
-            screen->setMemStartIndex(i);  // Store this to simplify deallocation later
-            return true;
-        }
-    }
-
-    return false; // Not enough contiguous space
-}
-
-void deallocateMemory(Screen* screen) {
-    lock_guard<mutex> lock(memoryMutex);
-    int start = screen->getMemStartIndex();
-    int required = screen->getRequiredMemory();
-
-    for (int i = start; i < start + required; ++i) {
-        memory[i] = "NULL";
-    }
-}
 
 void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq, int min_ins, int max_ins, int mem_per_proc) {
     cout << "scheduler-start command recognized." << "\n";

@@ -126,6 +126,3 @@ int Screen::getMemStartIndex() const {
     return memStartIndex;
 }
 
-void Screen::setMemStartIndex(int index) {
-    memStartIndex = index;
-}
