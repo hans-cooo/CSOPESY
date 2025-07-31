@@ -14,6 +14,7 @@
 #include <iomanip> 
 #include <random>
 #include <unordered_set>
+#include <optional>
 #include "screen.h"
 #include "utils.h" 
 #include "config.h"
@@ -26,6 +27,7 @@ thread schedulerThread;
 bool isInitialized = false;
 atomic<int> generatedProcessCount(0);
 const int maxGeneratedProcesses = 50;
+vector<optional<string>> memory;  // Represents memory blocks
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -64,6 +66,7 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         max_overall_mem = config.max_overall_mem;
         mem_per_frame   = config.mem_per_frame;
         mem_per_proc    = config.mem_per_proc;
+        memory.resize(max_overall_mem);  // Resize memory to fit the maximum overall memory
         isInitialized = true;
     }
 }
