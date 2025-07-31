@@ -1,6 +1,6 @@
-Timestamp: 07/31/2025 09:59:15 PM
+Timestamp: 07/31/2025 10:16:50 PM
 Core ID: 1
 Quantum Cycle: 4
 Processes in Memory: 2
-Total External Fragmentation: 0 KB
+Total External Fragmentation: 8192 KB
 

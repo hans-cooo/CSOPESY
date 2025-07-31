@@ -130,19 +130,15 @@ void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int
     }
 }
 
-//outfile << "Timestamp: " << getCurrentTime() << "\n";
-
 void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, mutex& screensMutex, 
     int coreNumber, int quantumCycles,
     int batchProcessFreq, int min_ins, int max_ins) {
 
     int cycleCounter = 0;
-
     fs::create_directory("txt");
 
     while (schedulerRunning) {
         Screen* screen = nullptr;
-
         {
             lock_guard<mutex> lock(queueMutex);
             if (!queue.empty()) {
@@ -181,11 +177,10 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                     // Count unused memory blocks (external fragmentation)
                     int unusedFrames = 0;
                     for (const auto& block : memory) {
-                        if (!block.has_value()) {
+                        if (block.has_value() && block.value() == "NULL") {
                             unusedFrames++;
                         }
                     }
-                    int fragmentationKB = (unusedFrames * 16) / 1024;
 
                     // File output
                     string filename = "txt/memory_stamp_core" + to_string(coreNumber) + "_cycle" + to_string(cycleCounter) + ".txt";
@@ -195,7 +190,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                         outfile << "Core ID: " << coreNumber << "\n";
                         outfile << "Quantum Cycle: " << cycleCounter << "\n";
                         outfile << "Processes in Memory: " << memCount << "\n";
-                        outfile << "Total External Fragmentation: " << fragmentationKB << " KB\n\n";
+                        outfile << "Total External Fragmentation: " << unusedFrames << " KB\n\n";
                         outfile.close();
                     }
                 }
