@@ -14,6 +14,6 @@ std::string getCurrentTime();
 void clearScreen();
 void reportUtilToFile(const vector<Screen>& screens, const string& filename, int num_cpu);
 bool isPowerOfTwo(int n);
-
+int hexToDecimal(const std::string& hexStr);
 
 #endif

@@ -85,3 +85,17 @@ void reportUtilToFile(const vector<Screen>& screens, const string& filename, int
 bool isPowerOfTwo(int n) {
     return n > 0 && (n & (n - 1)) == 0;
 }
+
+int hexToDecimal(const std::string& hexStr) {
+    if (hexStr.substr(0, 2) != "0x" && hexStr.substr(0, 2) != "0X") {
+        std::cerr << "Invalid hex format\n";
+        return -1;
+    }
+
+    try {
+        return std::stoi(hexStr, nullptr, 16);
+    } catch (const std::exception& e) {
+        std::cerr << "Conversion error: " << e.what() << '\n';
+        return -1;
+    }
+}
