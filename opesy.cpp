@@ -28,9 +28,15 @@ thread schedulerThread;
 bool isInitialized = false;
 atomic<int> generatedProcessCount(0);
 const int maxGeneratedProcesses = 50;
-vector<optional<string>> memory;  // Represents memory blocks
 mutex memoryMutex;
 namespace fs = std::filesystem;
+
+struct MemoryBlock {
+    string name;                 // Owner screen name or "NULL"
+    optional<uint16_t> data;     // Placeholder for later use (read, write, add)
+};
+
+vector<MemoryBlock> memory;  // Global memory vector
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -69,7 +75,7 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         max_overall_mem = config.max_overall_mem;
         mem_per_frame   = config.mem_per_frame;
         mem_per_proc    = config.mem_per_proc;
-        memory.resize(max_overall_mem, "NULL");  // Resize memory to fit the maximum overall memory
+        memory.resize(max_overall_mem, {"NULL", nullopt});  // Resize memory to fit the maximum overall memory
         isInitialized = true;
     }
 }
@@ -84,7 +90,7 @@ bool allocateMemory(Screen* screen) {
 
         // Check if required contiguous "NULL" blocks exist
         for (int j = 0; j < required; ++j) {
-            if (memory[i + j] != "NULL") {
+            if (memory[i + j].name != "NULL") {
                 found = false;
                 break;
             }
@@ -93,7 +99,7 @@ bool allocateMemory(Screen* screen) {
         if (found) {
             // Allocate: mark memory with the process name
             for (int j = 0; j < required; ++j) {
-                memory[i + j] = screen->getName();
+                memory[i + j].name = screen->getName();
             }
 
             screen->setMemStartIndex(i);  // Store this to simplify deallocation later
@@ -110,7 +116,7 @@ void deallocateMemory(Screen* screen) {
     int required = screen->getRequiredMemory();
 
     for (int i = start; i < start + required; ++i) {
-        memory[i] = "NULL";
+        memory[i].name = "NULL";
     }
 }
 
@@ -177,7 +183,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                     // Count unused memory blocks (external fragmentation)
                     int unusedFrames = 0;
                     for (const auto& block : memory) {
-                        if (block.has_value() && block.value() == "NULL") {
+                        if (block.name == "NULL") {
                             unusedFrames++;
                         }
                     }
