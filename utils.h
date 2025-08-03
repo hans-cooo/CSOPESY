@@ -13,7 +13,7 @@ std::vector<std::string> split_sentence(std::string sen);
 std::string getCurrentTime();
 void clearScreen();
 void reportUtilToFile(const vector<Screen>& screens, const string& filename, int num_cpu);
-
+bool isPowerOfTwo(int n);
 
 
 #endif
