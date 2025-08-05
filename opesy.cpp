@@ -43,6 +43,10 @@ queue<Screen*> fifoMemoryQueue;
 
 std::mutex coutMutex; // For logging
 
+atomic<int> totalIdleTicks(0);
+atomic<int> totalActiveTicks(0);
+atomic<int> totalCpuTicks(0);
+
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
     cout << "  / ___/ / ___|  /  _  | |  _ \\  |  __/ / ___|  \\ \\ / /" << "\n";
@@ -233,6 +237,13 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             }
         }
 
+        if (screen == nullptr) {
+                totalIdleTicks++;
+                totalCpuTicks++;
+                this_thread::sleep_for(chrono::milliseconds(10));
+                continue;  
+            }
+
         if (screen != nullptr && !screen->isFinished()) {
 
             if (screen->getMemStartIndex() == -1) {
@@ -251,7 +262,9 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                 //     << " executing process " << screen->getName() 
                 //     << " (Instruction: " << screen->getCurrInstruction() << "/" << screen->getNumInstructions() << ")\n";
                 // }
-                
+                totalActiveTicks++;
+                totalCpuTicks++;
+
                 screen->doProcess(coreNumber);
                 cycleCounter++;
 
@@ -539,7 +552,7 @@ int main() {
                             cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
                         }
                     }
-                    
+
                     cout << "\nUnfinished processes:\n";
                     for (const auto& s : screens) {
                         if(!s.isFinished() && !s.isRunning()) {
