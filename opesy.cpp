@@ -16,6 +16,7 @@
 #include <random>
 #include <unordered_set>
 #include <optional>
+#include <map>
 #include "screen.h"
 #include "utils.h" 
 #include "config.h"
@@ -96,7 +97,7 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         memory.resize(max_overall_mem, {"NULL", 0});  // Resize memory to fit the maximum overall memory
         isInitialized = true;
     }
-    printMemoryState();
+    //printMemoryState();
 }
 
 
@@ -111,11 +112,11 @@ void deallocateMemory(Screen* screen) {
 
     screen->setMemStartIndex(-1);
 
-    {
-        lock_guard<mutex> lock(coutMutex);
-        cout << "[DEALLOCATE] Process " << screen->getName()
-            << " deallocated from memory.\n";
-    }
+    // {
+    //     lock_guard<mutex> lock(coutMutex);
+    //     cout << "[DEALLOCATE] Process " << screen->getName()
+    //         << " deallocated from memory.\n";
+    // }
 
 
 }
@@ -144,8 +145,8 @@ bool allocateMemory(Screen* screen) {
     // Step 2: If not enough space, evict FIFO processes until space is available
     while (memStart == -1) {
         if (fifoMemoryQueue.empty()) {
-            cout << "[ALLOCATE-FAIL] Cannot allocate memory for " 
-            << screen->getName() << ". No space and nothing to evict.\n";
+            // cout << "[ALLOCATE-FAIL] Cannot allocate memory for " 
+            // << screen->getName() << ". No space and nothing to evict.\n";
             return false; // Cannot evict more; no processes in memory
         }
 
@@ -153,14 +154,14 @@ bool allocateMemory(Screen* screen) {
         Screen* evicted = fifoMemoryQueue.front();
         fifoMemoryQueue.pop();
 
-        {
-            lock_guard<mutex> lock(coutMutex);
-            cout << "[EVICT] Evicting process " << evicted->getName()
-                << " to free up memory.\n";
-        }
+        // {
+        //     lock_guard<mutex> lock(coutMutex);
+        //     cout << "[EVICT] Evicting process " << evicted->getName()
+        //         << " to free up memory.\n";
+        // }
         
         deallocateMemory(evicted);
-        printMemoryState();
+        //printMemoryState();
 
 
         // Retry finding space after eviction
@@ -185,16 +186,16 @@ bool allocateMemory(Screen* screen) {
     }
 
     screen->setMemStartIndex(memStart);
-    {
-        lock_guard<mutex> lock(coutMutex);
-        cout << "[ALLOCATE] Process " << screen->getName()
-            << " allocated at index " << memStart
-            << " for " << memSize << " frames.\n";
-    }
+    // {
+    //     lock_guard<mutex> lock(coutMutex);
+    //     cout << "[ALLOCATE] Process " << screen->getName()
+    //         << " allocated at index " << memStart
+    //         << " for " << memSize << " frames.\n";
+    // }
 
 
     fifoMemoryQueue.push(screen); // Track this allocation in FIFO order
-    printMemoryState();
+    // printMemoryState();
 
     return true;
 }
@@ -244,12 +245,12 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             }
 
             for (int i = 0; i < quantumCycles && !screen->isFinished(); ++i) {
-                {
-                    lock_guard<mutex> lock(coutMutex);
-                    cout << "[RUN] Core " << coreNumber 
-                    << " executing process " << screen->getName() 
-                    << " (Instruction: " << screen->getCurrInstruction() << "/" << screen->getNumInstructions() << ")\n";
-                }
+                // {
+                //     lock_guard<mutex> lock(coutMutex);
+                //     cout << "[RUN] Core " << coreNumber 
+                //     << " executing process " << screen->getName() 
+                //     << " (Instruction: " << screen->getCurrInstruction() << "/" << screen->getNumInstructions() << ")\n";
+                // }
                 
                 screen->doProcess(coreNumber);
                 cycleCounter++;
@@ -289,18 +290,18 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             }
 
             if (screen->isFinished()) {
-                cout << "[FINISH] Process " << screen->getName() 
-                << " finished execution. Memory will be released.\n";
+                // cout << "[FINISH] Process " << screen->getName() 
+                // << " finished execution. Memory will be released.\n";
                 deallocateMemory(screen);
             } else {
                 lock_guard<mutex> lock(queueMutex);
                 screen->setRunningToFalse();
                 queue.push_back(screen);
-                {
-                    lock_guard<mutex> lock(coutMutex);
-                    cout << "[REQUEUE] Process " << screen->getName() 
-                         << " requeued after quantum.\n";
-                }
+                // {
+                //     lock_guard<mutex> lock(coutMutex);
+                //     cout << "[REQUEUE] Process " << screen->getName() 
+                //          << " requeued after quantum.\n";
+                // }
             }
         }
 
@@ -379,6 +380,53 @@ void reportUtil(const vector<Screen>& screens, int num_cpu) {
     cout << "report-util command recognized." << "\n";
     reportUtilToFile(screens, "report.txt", num_cpu);
     cout << "Process utilization report saved to report.txt\n";
+}
+
+void processSmi(vector<Screen>& screens, int num_cpu) {
+    lock_guard<mutex> coutLock(coutMutex);
+    lock_guard<recursive_mutex> memoryLock(memoryMutex);
+
+    // ----- CPU UTILIZATION -----
+    unordered_set<int> activeCores;
+    for (const auto& s : screens) {
+        if(s.isRunning()) {
+            
+            int coreID = s.getAssignedCore();
+            if (coreID >= 0){
+                activeCores.insert(coreID);
+            }
+            
+        }
+    }
+    float utilization = (num_cpu > 0) ? (static_cast<float>(activeCores.size()) / num_cpu) * 100.0f : 0.0f;
+    cout << "\nCPU Utilization: " << activeCores.size() << " / " << num_cpu << " cores active (" << utilization << "%)\n";
+
+    // ----- MEMORY USAGE -----
+    int usedBytes = 0;
+    int totalBytes = memory.size();  // each block is 1 byte
+    map<string, int> processMemUsage; // process name -> memory used
+
+    for (const auto& block : memory) {
+        if (block.name != "NULL") {
+            usedBytes++;
+            processMemUsage[block.name]++;
+        }
+    }
+
+    int memUsagePercent = round((usedBytes * 100.0) / totalBytes);
+    cout << "Memory Usage: " << usedBytes << " / " << totalBytes << " bytes (" << memUsagePercent << "%)" << endl;
+
+    // ----- RUNNING PROCESSES -----
+    if (processMemUsage.empty()) {
+        cout << "No running processes in memory." << endl;
+    } else {
+        cout << "Running Processes:" << endl;
+        for (const auto& [procName, memUsed] : processMemUsage) {
+            cout << "  " << procName << ": " << memUsed << " bytes" << endl;
+        }
+    }
+
+    cout << flush;
 }
 
 int main() {
@@ -511,7 +559,10 @@ int main() {
             schedulerStop();
         } else if (words[0] == "report-util") {
             reportUtil(screens, num_cpu);
-        } else {
+        } else if (words[0] == "process-smi") {
+            processSmi(screens, num_cpu);
+        }
+        else {
             cout << "Invalid command." << "\n";
         }
         words.clear();
