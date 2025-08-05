@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <deque>
+#include <queue>
 #include <mutex>
 #include <ctime>
 #include <iomanip>
@@ -27,8 +28,8 @@ atomic<bool> schedulerRunning(false);  // Shared flag to signal scheduler to sto
 thread schedulerThread;
 bool isInitialized = false;
 atomic<int> generatedProcessCount(0);
-const int maxGeneratedProcesses = 50;
-mutex memoryMutex;
+const int maxGeneratedProcesses = 10;
+recursive_mutex memoryMutex;
 namespace fs = std::filesystem;
 
 struct MemoryBlock {
@@ -37,6 +38,9 @@ struct MemoryBlock {
 };
 
 vector<MemoryBlock> memory;  // Global memory vector
+queue<Screen*> fifoMemoryQueue;
+
+std::mutex coutMutex; // For logging
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -56,6 +60,20 @@ int generateInstructions(int min_ins, int max_ins) {
     std::uniform_int_distribution<> dist(min_ins, max_ins);
 
     return dist(gen);
+}
+
+void printMemoryState() {
+    lock_guard<mutex> coutLock(coutMutex);  // Prevent cout interleaving
+    lock_guard<recursive_mutex> memoryLock(memoryMutex);
+    cout << "[MEMORY STATE] ";
+    for (size_t i = 0; i < memory.size(); ++i) {
+        if (memory[i].name == "NULL") {
+            cout << "[ ]";
+        } else {
+            cout << "[" << memory[i].name << "]";
+        }
+    }
+    cout << endl << flush;
 }
 
 
@@ -78,46 +96,107 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         memory.resize(max_overall_mem, {"NULL", nullopt});  // Resize memory to fit the maximum overall memory
         isInitialized = true;
     }
+    printMemoryState();
 }
 
-bool allocateMemory(Screen* screen) {
-    lock_guard<mutex> lock(memoryMutex);
-    int required = screen->getRequiredMemory();
-    int maxIndex = memory.size() - required + 1;
-
-    for (int i = 0; i < maxIndex; ++i) {
-        bool found = true;
-
-        // Check if required contiguous "NULL" blocks exist
-        for (int j = 0; j < required; ++j) {
-            if (memory[i + j].name != "NULL") {
-                found = false;
-                break;
-            }
-        }
-
-        if (found) {
-            // Allocate: mark memory with the process name
-            for (int j = 0; j < required; ++j) {
-                memory[i + j].name = screen->getName();
-            }
-
-            screen->setMemStartIndex(i);  // Store this to simplify deallocation later
-            return true;
-        }
-    }
-
-    return false; // Not enough contiguous space
-}
 
 void deallocateMemory(Screen* screen) {
-    lock_guard<mutex> lock(memoryMutex);
+    lock_guard<recursive_mutex> lock(memoryMutex);
     int start = screen->getMemStartIndex();
     int required = screen->getRequiredMemory();
 
     for (int i = start; i < start + required; ++i) {
         memory[i].name = "NULL";
     }
+
+    screen->setMemStartIndex(-1);
+
+    {
+        lock_guard<mutex> lock(coutMutex);
+        cout << "[DEALLOCATE] Process " << screen->getName()
+            << " deallocated from memory.\n";
+    }
+
+
+}
+
+bool allocateMemory(Screen* screen) {
+    lock_guard<recursive_mutex> lock(memoryMutex); // Lock memory + FIFO queue
+
+    int memSize = screen->getRequiredMemory();
+    int memStart = -1;
+
+    // Step 1: Try to find contiguous free memory
+    for (size_t i = 0; i <= memory.size() - memSize; ++i) {
+        bool spaceFree = true;
+        for (int j = 0; j < memSize; ++j) {
+            if (memory[i + j].name != "NULL") {
+                spaceFree = false;
+                break;
+            }
+        }
+        if (spaceFree) {
+            memStart = i;
+            break;
+        }
+    }
+
+    // Step 2: If not enough space, evict FIFO processes until space is available
+    while (memStart == -1) {
+        if (fifoMemoryQueue.empty()) {
+            cout << "[ALLOCATE-FAIL] Cannot allocate memory for " 
+            << screen->getName() << ". No space and nothing to evict.\n";
+            return false; // Cannot evict more; no processes in memory
+        }
+
+        // Evict the oldest process in memory (FIFO)
+        Screen* evicted = fifoMemoryQueue.front();
+        fifoMemoryQueue.pop();
+
+        {
+            lock_guard<mutex> lock(coutMutex);
+            cout << "[EVICT] Evicting process " << evicted->getName()
+                << " to free up memory.\n";
+        }
+        
+        deallocateMemory(evicted);
+        printMemoryState();
+
+
+        // Retry finding space after eviction
+        for (size_t i = 0; i <= memory.size() - memSize; ++i) {
+            bool spaceFree = true;
+            for (int j = 0; j < memSize; ++j) {
+                if (memory[i + j].name != "NULL") {
+                    spaceFree = false;
+                    break;
+                }
+            }
+            if (spaceFree) {
+                memStart = i;
+                break;
+            }
+        }
+    }
+
+    // Step 3: Allocate memory
+    for (int i = memStart; i < memStart + memSize; ++i) {
+        memory[i].name = screen->getName();
+    }
+
+    screen->setMemStartIndex(memStart);
+    {
+        lock_guard<mutex> lock(coutMutex);
+        cout << "[ALLOCATE] Process " << screen->getName()
+            << " allocated at index " << memStart
+            << " for " << memSize << " frames.\n";
+    }
+
+
+    fifoMemoryQueue.push(screen); // Track this allocation in FIFO order
+    printMemoryState();
+
+    return true;
 }
 
 void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int min_ins, int max_ins) {
@@ -165,6 +244,13 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             }
 
             for (int i = 0; i < quantumCycles && !screen->isFinished(); ++i) {
+                {
+                    lock_guard<mutex> lock(coutMutex);
+                    cout << "[RUN] Core " << coreNumber 
+                    << " executing process " << screen->getName() 
+                    << " (Instruction: " << screen->getCurrInstruction() << "/" << screen->getNumInstructions() << ")\n";
+                }
+                
                 screen->doProcess(coreNumber);
                 cycleCounter++;
 
@@ -203,11 +289,19 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             }
 
             if (screen->isFinished()) {
+                cout << "[FINISH] Process " << screen->getName() 
+                << " finished execution. Memory will be released.\n";
                 deallocateMemory(screen);
             } else {
                 lock_guard<mutex> lock(queueMutex);
                 screen->setRunningToFalse();
                 queue.push_back(screen);
+                {
+                    lock_guard<mutex> lock(coutMutex);
+                    cout << "[REQUEUE] Process " << screen->getName() 
+                         << " requeued after quantum.\n";
+                }
+                // deallocateMemory(screen); Secondary option to deallocate after each quantum, idk if it's demand paging though
             }
         }
 
