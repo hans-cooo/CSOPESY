@@ -18,6 +18,7 @@ Screen::Screen(string name, string timeCreated, int numInstructions, int require
     this->requiredMemory = requiredMemory;
     this->finished = false;
     this->memStartIndex = -1;
+    this->customInstructions = "";
 }
 
 void Screen::displayDetails() {
@@ -126,3 +127,6 @@ int Screen::getMemStartIndex() const {
     return memStartIndex;
 }
 
+void Screen::setCustomInstructions(const string& instructions) {
+    customInstructions = instructions;
+}
