@@ -399,7 +399,8 @@ void processSmi(vector<Screen>& screens, int num_cpu) {
         }
     }
     float utilization = (num_cpu > 0) ? (static_cast<float>(activeCores.size()) / num_cpu) * 100.0f : 0.0f;
-    cout << "\nCPU Utilization: " << activeCores.size() << " / " << num_cpu << " cores active (" << utilization << "%)\n";
+    cout << "\n---------------------------------------------------------------------------\n";
+    cout << "CPU Utilization: " << activeCores.size() << " / " << num_cpu << " cores active (" << utilization << "%)\n";
 
     // ----- MEMORY USAGE -----
     int usedBytes = 0;
@@ -414,17 +415,19 @@ void processSmi(vector<Screen>& screens, int num_cpu) {
     }
 
     int memUsagePercent = round((usedBytes * 100.0) / totalBytes);
-    cout << "Memory Usage: " << usedBytes << " / " << totalBytes << " bytes (" << memUsagePercent << "%)" << endl;
+    cout << "Memory Usage: " << usedBytes << " / " << totalBytes << " bytes (" << memUsagePercent << "%" << " Utilization)" << endl;
+    cout << "---------------------------------------------------------------------------\n";
 
     // ----- RUNNING PROCESSES -----
     if (processMemUsage.empty()) {
         cout << "No running processes in memory." << endl;
     } else {
-        cout << "Running Processes:" << endl;
+        cout << "Running Processes and Memory Usage:" << endl;
         for (const auto& [procName, memUsed] : processMemUsage) {
             cout << "  " << procName << ": " << memUsed << " bytes" << endl;
         }
     }
+    cout << "---------------------------------------------------------------------------\n\n";
 
     cout << flush;
 }
