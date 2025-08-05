@@ -21,6 +21,7 @@
 #include "utils.h" 
 #include "config.h"
 #include <filesystem>
+#include <unordered_map>
 Config config;
 
 using namespace std;
@@ -32,6 +33,8 @@ atomic<int> generatedProcessCount(0);
 const int maxGeneratedProcesses = 50;
 recursive_mutex memoryMutex;
 namespace fs = std::filesystem;
+
+unordered_map<string, uint16_t> variables;
 
 struct MemoryBlock {
     string name;                 // Owner screen name or "NULL"
@@ -505,6 +508,28 @@ void vmstat() {
     cout << "Pages Paged Out: " << memoryPagesPagedOut.load() << endl;
 }
 
+void readFromMemory(const string& varName, const string& hexAddress) {
+    int index = hexToDecimal(hexAddress);
+    if (index >= 0 && index < memory.size()) {
+        uint16_t value = memory[index].data.value_or(0); // 0 if not initialized
+        variables[varName] = value;
+        cout << "READ: Stored value " << value << " into variable '" << varName << "' from memory[" << index << "]" << endl;
+    } else {
+        cout << "READ ERROR: Address " << hexAddress << " out of bounds" << endl;
+    }
+}
+
+void writeToMemory(const string& hexAddress, const string& valueStr) {
+    int index = hexToDecimal(hexAddress);
+    if (index >= 0 && index < memory.size()) {
+        uint16_t value = static_cast<uint16_t>(stoi(valueStr));
+        memory[index].data = value;
+        cout << "WRITE: Stored value " << value << " into memory[" << index << "]" << endl;
+    } else {
+        cout << "WRITE ERROR: Address " << hexAddress << " out of bounds" << endl;
+    }
+}
+
 int main() {
     string command;
 
@@ -519,6 +544,7 @@ int main() {
     int max_overall_mem;
     int mem_per_frame;
     int mem_per_proc;
+
 
     printHeader();
     cout << "Enter a command: ";
@@ -647,6 +673,18 @@ int main() {
             processSmi(screens, num_cpu);
         } else if (words[0] == "vmstat") {
             vmstat();
+        } else if (words[0] == "read") {
+            if (words.size() >= 3) {
+                readFromMemory(words[1], words[2]);
+            } else {
+                cout << "Usage: read <var> <hex_address>" << endl;
+            }
+        } else if (words[0] == "write") {
+            if (words.size() >= 3) {
+                writeToMemory(words[1], words[2]);
+            } else {
+                cout << "Usage: write <hex_address> <value>" << endl;
+            }
         } else {
             cout << "Invalid command." << "\n";
         }

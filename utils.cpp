@@ -82,26 +82,20 @@ void reportUtilToFile(const vector<Screen>& screens, const string& filename, int
     out.close();
 }
 
-// READ: Returns the uint16_t value at memory[address]
-uint16_t READ(const std::string& varName, int address) {
-    if (address < 0 || address >= memory.size()) {
-        cerr << "[READ] Error: Address out of bounds: " << address << endl;
-        return 0;
-    }
-
-    if (memory[address].data.has_value()) {
-        return memory[address].data.value();
-    } else {
-        return 0;
-    }
+bool isPowerOfTwo(int n) {
+    return n > 0 && (n & (n - 1)) == 0;
 }
 
-// WRITE: Sets memory[address].data to value
-void WRITE(int address, uint16_t value) {
-    if (address < 0 || address >= memory.size()) {
-        cerr << "[WRITE] Error: Address out of bounds: " << address << endl;
-        return;
+int hexToDecimal(const std::string& hexStr) {
+    if (hexStr.substr(0, 2) != "0x" && hexStr.substr(0, 2) != "0X") {
+        std::cerr << "Invalid hex format\n";
+        return -1;
     }
 
-    memory[address].data = value;
+    try {
+        return std::stoi(hexStr, nullptr, 16);
+    } catch (const std::exception& e) {
+        std::cerr << "Conversion error: " << e.what() << '\n';
+        return -1;
+    }
 }
