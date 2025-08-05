@@ -523,6 +523,7 @@ int main() {
     printHeader();
     cout << "Enter a command: ";
     getline(cin, command);
+    string fullCommand = command;
     vector<string> words = split_sentence(command); // Entered command is a vector of strings
     vector<Screen> screens; 
 
@@ -559,7 +560,7 @@ int main() {
                         cout << "Screen with name '" << words[2] << "' does not exist." << "\n";
                     }
 
-                } else if (words[1] == "-s") { // Behavior to create a screen
+                } else if (words[1] == "-s" || words[1] == "-c") { // Behavior to create a screen
                     bool exists = false;
                     for (const auto& screen : screens) {
                         if (screen.getName() == words[2]) {
@@ -583,6 +584,19 @@ int main() {
                         }
                         Screen newScreen(words[2], getCurrentTime(), generateInstructions(min_ins, max_ins), mem_per_proc_val);
                         screens.push_back(newScreen);
+
+                        if (words[1] == "-c") {
+                            size_t firstQuote = fullCommand.find("\"");
+                            size_t lastQuote = fullCommand.find_last_of("\"");
+
+                            if (firstQuote != string::npos && lastQuote != string::npos && lastQuote > firstQuote) {
+                                string extracted = fullCommand.substr(firstQuote + 1, lastQuote - firstQuote - 1);
+                                screens.back().setCustomInstructions(extracted);
+                            } else {
+                                cout << "[ERROR] Missing or malformed quoted custom instructions.\n";
+                            }
+                        }
+
                         cout << "Screen '" << words[2] << "' created at " << getCurrentTime() << "." << "\n";
 
                         // Print all screens (might change this to a different command later)
