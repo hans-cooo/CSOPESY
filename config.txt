@@ -6,5 +6,5 @@ min-ins 10
 max-ins 10
 delay-per-exec 0
 max-overall-mem 4
-mem-per-frame 16
+mem-per-frame 1
 mem-per-proc 1

@@ -1,0 +1,5 @@
+Page: 0
+Memory index: 0
+Process: p17
+Owner: p17
+Data: [none]

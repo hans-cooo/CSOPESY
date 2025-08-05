@@ -1,0 +1,5 @@
+Page: 0
+Memory index: 3
+Process: p28
+Owner: p28
+Data: [none]

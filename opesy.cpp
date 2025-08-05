@@ -107,27 +107,51 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
 }
 
 
-void deallocateMemory(Screen* screen) {
+void deallocateMemory(Screen* screen, int mem_per_frame) {
     lock_guard<recursive_mutex> lock(memoryMutex);
     int start = screen->getMemStartIndex();
-    int required = screen->getRequiredMemory();
+    int requiredBytes = screen->getRequiredMemory();
 
-    for (int i = start; i < start + required; ++i) {
-        memory[i].name = "NULL";
+    if (start == -1) return; // Already deallocated or never allocated
+
+    std::filesystem::create_directories("backing_store");
+
+    int requiredFrames = requiredBytes / mem_per_frame;
+
+    for (int i = start; i < start + requiredFrames; ++i) {
+        if (i >= 0 && i < memory.size()) {
+            std::string fileName = "backing_store/" + screen->getName() + "_page" + std::to_string(i - start) + ".txt";
+            std::ofstream outFile(fileName);
+            if (outFile.is_open()) {
+                outFile << "Page: " << (i - start) << "\n";
+                outFile << "Memory index: " << i << "\n";
+                outFile << "Process: " << screen->getName() << "\n";
+                outFile << "Owner: " << memory[i].name << "\n";
+                if (memory[i].data.has_value()) {
+                    outFile << "Data: " << memory[i].data.value() << "\n";
+                } else {
+                    outFile << "Data: [none]\n";
+                }
+                outFile.close();
+            }
+
+            // Clear the memory block
+            memory[i].name = "NULL";
+            memory[i].data.reset();
+        }
     }
 
     screen->setMemStartIndex(-1);
 
+    // Optional debug logging
     // {
     //     lock_guard<mutex> lock(coutMutex);
-    //     cout << "[DEALLOCATE] Process " << screen->getName()
-    //         << " deallocated from memory.\n";
+    //     cout << "[DEALLOCATE] Process " << screen->getName() << " deallocated and written to backing store.\n";
     // }
-
-
 }
 
-bool allocateMemory(Screen* screen) {
+
+bool allocateMemory(Screen* screen, int mem_per_frame) {
     lock_guard<recursive_mutex> lock(memoryMutex); // Lock memory + FIFO queue
 
     int memSize = screen->getRequiredMemory();
@@ -166,7 +190,7 @@ bool allocateMemory(Screen* screen) {
         //         << " to free up memory.\n";
         // }
         memoryPagesPagedOut++;
-        deallocateMemory(evicted);
+        deallocateMemory(evicted, mem_per_frame);
         //printMemoryState();
 
 
@@ -225,7 +249,7 @@ void fcfsCore(vector<Screen>& screens, int coreNumber, int batchProcessFreq, int
 
 void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, mutex& screensMutex, 
     int coreNumber, int quantumCycles,
-    int batchProcessFreq, int min_ins, int max_ins) {
+    int batchProcessFreq, int min_ins, int max_ins, int mem_per_frame) {
 
     int cycleCounter = 0;
     fs::create_directory("txt");
@@ -250,7 +274,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
         if (screen != nullptr && !screen->isFinished()) {
 
             if (screen->getMemStartIndex() == -1) {
-                if (!allocateMemory(screen)) {
+                if (!allocateMemory(screen, mem_per_frame)) {
                     // Could not allocate memory, requeue and skip
                     lock_guard<mutex> lock(queueMutex);
                     queue.push_back(screen);
@@ -308,7 +332,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             if (screen->isFinished()) {
                 // cout << "[FINISH] Process " << screen->getName() 
                 // << " finished execution. Memory will be released.\n";
-                deallocateMemory(screen);
+                deallocateMemory(screen, mem_per_frame);
             } else {
                 lock_guard<mutex> lock(queueMutex);
                 screen->setRunningToFalse();
@@ -329,7 +353,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
 
 
 
-void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq, int min_ins, int max_ins, int mem_per_proc) {
+void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int quantumCycles, int batchProcessFreq, int min_ins, int max_ins, int mem_per_frame, int mem_per_proc) {
     cout << "scheduler-start command recognized." << "\n";
     schedulerRunning = true;
 
@@ -372,7 +396,7 @@ void schedulerStart(vector<Screen>& screens, int num_cpu, string scheduler, int 
 
         for (int i = 0; i < num_cpu; ++i) {
             cores.emplace_back(rrCore, ref(screenQueue), ref(queueMutex), ref(screens), 
-            ref(screensMutex), i, quantumCycles, batchProcessFreq, min_ins, max_ins);
+            ref(screensMutex), i, quantumCycles, batchProcessFreq, min_ins, max_ins, mem_per_frame);
         }
 
         for (auto& core : cores) {
@@ -608,7 +632,7 @@ int main() {
             if (!schedulerRunning) {
                 if (isInitialized) {
                     schedulerThread = thread(schedulerStart, ref(screens), num_cpu, 
-                    scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, mem_per_proc);
+                    scheduler, quantumCycles, batchProcessFreq, min_ins, max_ins, mem_per_frame, mem_per_proc);
                 } else {
                     cout << "Not yet initialized. Run 'initialize' first.\n";
                 }
