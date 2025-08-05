@@ -93,7 +93,7 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
         max_overall_mem = config.max_overall_mem;
         mem_per_frame   = config.mem_per_frame;
         mem_per_proc    = config.mem_per_proc;
-        memory.resize(max_overall_mem, {"NULL", nullopt});  // Resize memory to fit the maximum overall memory
+        memory.resize(max_overall_mem, {"NULL", 0});  // Resize memory to fit the maximum overall memory
         isInitialized = true;
     }
     printMemoryState();
