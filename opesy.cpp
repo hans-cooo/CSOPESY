@@ -165,7 +165,7 @@ bool allocateMemory(Screen* screen) {
         //     cout << "[EVICT] Evicting process " << evicted->getName()
         //         << " to free up memory.\n";
         // }
-        memoryPagesPagedOut += evicted->getRequiredMemory();
+        memoryPagesPagedOut++;
         deallocateMemory(evicted);
         //printMemoryState();
 
@@ -192,7 +192,7 @@ bool allocateMemory(Screen* screen) {
     }
 
     screen->setMemStartIndex(memStart);
-    memoryPagesPagedIn += memSize; 
+    memoryPagesPagedIn++; 
     // {
     //     lock_guard<mutex> lock(coutMutex);
     //     cout << "[ALLOCATE] Process " << screen->getName()
