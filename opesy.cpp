@@ -29,7 +29,7 @@ atomic<bool> schedulerRunning(false);  // Shared flag to signal scheduler to sto
 thread schedulerThread;
 bool isInitialized = false;
 atomic<int> generatedProcessCount(0);
-const int maxGeneratedProcesses = 10;
+const int maxGeneratedProcesses = 1000;
 recursive_mutex memoryMutex;
 namespace fs = std::filesystem;
 
@@ -539,6 +539,14 @@ int main() {
                             cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Finished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
                         }
                     }
+                    
+                    cout << "\nUnfinished processes:\n";
+                    for (const auto& s : screens) {
+                        if(!s.isFinished() && !s.isRunning()) {
+                            cout << s.getName() << "    (" << s.getTimeCreated() << ")    " << "Unfinished    " << s.getCurrInstruction() << " / " << s.getNumInstructions() << "\n";
+                        }
+                    }
+
                     float utilization = (num_cpu > 0) ? (static_cast<float>(activeCores.size()) / num_cpu) * 100.0f : 0.0f;
                     cout << "\nCPU Utilization: " << activeCores.size() << " / " << num_cpu << " cores active (" << utilization << "%)\n";
 
