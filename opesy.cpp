@@ -448,6 +448,39 @@ void processSmi(vector<Screen>& screens, int num_cpu) {
     cout << flush;
 }
 
+void vmstat() {
+    lock_guard<mutex> lock(coutMutex);
+    lock_guard<recursive_mutex> memoryLock(memoryMutex);
+
+    const int frameSizeInBytes = 1; // adjust if 1 frame = N bytes
+
+    int totalMemoryBytes = memory.size() * frameSizeInBytes;
+    int usedMemoryBytes = 0;
+    int freeMemoryBytes = 0;
+
+    for (const auto& block : memory) {
+        if (block.name == "NULL") {
+            freeMemoryBytes += frameSizeInBytes;
+        } else {
+            usedMemoryBytes += frameSizeInBytes;
+        }
+    }
+
+    int idle = totalIdleTicks.load();
+    int active = totalActiveTicks.load();
+    int totalTicks = idle + active; // totalCpuTicks.load();
+
+    cout << "[VMSTAT]" << endl;
+    cout << "Total Memory: " << totalMemoryBytes << " bytes" << endl;
+    cout << "Used Memory: " << usedMemoryBytes << " bytes" << endl;
+    cout << "Free Memory: " << freeMemoryBytes << " bytes" << endl;
+    cout << "CPU Ticks (Idle): " << idle << endl;
+    cout << "CPU Ticks (Active): " << active << endl;
+    cout << "CPU Ticks (Total): " << totalTicks << endl;
+    cout << "Pages Paged In: " << memoryPagesPagedIn.load() << endl;
+    cout << "Pages Paged Out: " << memoryPagesPagedOut.load() << endl;
+}
+
 int main() {
     string command;
 
@@ -588,8 +621,9 @@ int main() {
             reportUtil(screens, num_cpu);
         } else if (words[0] == "process-smi") {
             processSmi(screens, num_cpu);
-        }
-        else {
+        } else if (words[0] == "vmstat") {
+            vmstat();
+        } else {
             cout << "Invalid command." << "\n";
         }
         words.clear();
