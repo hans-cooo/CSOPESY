@@ -274,17 +274,17 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                         }
                     }
 
-                    // File output
-                    string filename = "txt/memory_stamp_core" + to_string(coreNumber) + "_cycle" + to_string(cycleCounter) + ".txt";
-                    ofstream outfile(filename);
-                    if (outfile.is_open()) {
-                        outfile << "Timestamp: " << getCurrentTime() << "\n";
-                        outfile << "Core ID: " << coreNumber << "\n";
-                        outfile << "Quantum Cycle: " << cycleCounter << "\n";
-                        outfile << "Processes in Memory: " << memCount << "\n";
-                        outfile << "Total External Fragmentation: " << unusedFrames << " KB\n\n";
-                        outfile.close();
-                    }
+                    // File output (Used for Week 10)
+                    // string filename = "txt/memory_stamp_core" + to_string(coreNumber) + "_cycle" + to_string(cycleCounter) + ".txt";
+                    // ofstream outfile(filename);
+                    // if (outfile.is_open()) {
+                    //     outfile << "Timestamp: " << getCurrentTime() << "\n";
+                    //     outfile << "Core ID: " << coreNumber << "\n";
+                    //     outfile << "Quantum Cycle: " << cycleCounter << "\n";
+                    //     outfile << "Processes in Memory: " << memCount << "\n";
+                    //     outfile << "Total External Fragmentation: " << unusedFrames << " KB\n\n";
+                    //     outfile.close();
+                    // }
                 }
             }
 
@@ -301,7 +301,6 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
                     cout << "[REQUEUE] Process " << screen->getName() 
                          << " requeued after quantum.\n";
                 }
-                // deallocateMemory(screen); Secondary option to deallocate after each quantum, idk if it's demand paging though
             }
         }
 
@@ -446,7 +445,19 @@ int main() {
                         }
                     }
                     if (!exists) {
-                        Screen newScreen(words[2], getCurrentTime(), generateInstructions(min_ins, max_ins), mem_per_proc);
+                        int mem_per_proc_val = mem_per_proc;
+                        if (words.size() > 3) {
+                            try {
+                                mem_per_proc_val = stoi(words[3]);
+                            } catch (...) {
+                                cout << "Invalid memory per process value. Using initialized value.\n";
+                            }
+                        }
+                        if (isPowerOfTwo(mem_per_proc_val) == false) {
+                            cout << "Memory per process must be from 2^6 to 2^16. Using initialized value.\n";
+                            mem_per_proc_val = mem_per_proc;
+                        }
+                        Screen newScreen(words[2], getCurrentTime(), generateInstructions(min_ins, max_ins), mem_per_proc_val);
                         screens.push_back(newScreen);
                         cout << "Screen '" << words[2] << "' created at " << getCurrentTime() << "." << "\n";
 
