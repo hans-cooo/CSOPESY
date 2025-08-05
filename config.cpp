@@ -54,10 +54,10 @@ bool Config::loadFromFile(const string& filename) {
             max_overall_mem = stoi(rest_of_line);
         } else if (key == "mem_per_frame") {
             mem_per_frame = stoi(rest_of_line);
-        } else if (key == "mem_per_proc") {
+        } else if (key == "max_mem_per_proc") {
             mem_per_proc = stoi(rest_of_line);
         } else {
-            cerr << "Unknown config key: " << key << "\n";
+            // cerr << "Unknown config key: " << key << "\n";
             file.ignore(numeric_limits<streamsize>::max(), '\n'); // skip rest of line
         }
     }
