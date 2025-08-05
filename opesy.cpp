@@ -15,7 +15,6 @@
 #include <random>
 #include <unordered_set>
 #include <optional>
-#include <algorithm>
 #include "screen.h"
 #include "utils.h" 
 #include "config.h"
@@ -38,9 +37,6 @@ struct MemoryBlock {
 };
 
 vector<MemoryBlock> memory;  // Global memory vector
-deque<string> pageLoadOrder;
-int pagesPagedIn = 0;
-int pagesPagedOut = 0;
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -84,71 +80,43 @@ void initialize(int& num_cpu, string& scheduler, int& quantumCycles,
     }
 }
 
-void evictOldestScreen() {
-    lock_guard<mutex> lock(memoryMutex); 
+bool allocateMemory(Screen* screen) {
+    lock_guard<mutex> lock(memoryMutex);
+    int required = screen->getRequiredMemory();
+    int maxIndex = memory.size() - required + 1;
 
-    if (!pageLoadOrder.empty()) {
-        string toRemove = pageLoadOrder.front();
-        pageLoadOrder.pop_front();
+    for (int i = 0; i < maxIndex; ++i) {
+        bool found = true;
 
-        for (auto& block : memory) {
-            if (block.name == toRemove) {
-                block.name = "NULL";
-                block.data = nullopt;
+        // Check if required contiguous "NULL" blocks exist
+        for (int j = 0; j < required; ++j) {
+            if (memory[i + j].name != "NULL") {
+                found = false;
+                break;
             }
         }
 
-        pagesPagedOut++;
-    }
-}
+        if (found) {
+            // Allocate: mark memory with the process name
+            for (int j = 0; j < required; ++j) {
+                memory[i + j].name = screen->getName();
+            }
 
-bool allocateMemory(Screen* screen, int requiredBlocks) {
-    lock_guard<mutex> lock(memoryMutex); 
-
-    int available = 0;
-    for (const auto& block : memory) {
-        if (block.name == "NULL") available++;
-    }
-
-    while (available < requiredBlocks && !pageLoadOrder.empty()) {
-        evictOldestScreen();
-        available = 0;
-        for (const auto& block : memory) {
-            if (block.name == "NULL") available++;
+            screen->setMemStartIndex(i);  // Store this to simplify deallocation later
+            return true;
         }
     }
 
-    if (available < requiredBlocks) return false;
-
-    int allocated = 0;
-    for (auto& block : memory) {
-        if (block.name == "NULL") {
-            block.name = screen->getName();
-            block.data = nullopt;
-            allocated++;
-            if (allocated == requiredBlocks) break;
-        }
-    }
-
-    pageLoadOrder.push_back(screen->getName());
-    pagesPagedIn++;
-    return true;
+    return false; // Not enough contiguous space
 }
 
-
-void deallocateMemory(const string& screenName) {
+void deallocateMemory(Screen* screen) {
     lock_guard<mutex> lock(memoryMutex);
+    int start = screen->getMemStartIndex();
+    int required = screen->getRequiredMemory();
 
-    for (auto& block : memory) {
-        if (block.name == screenName) {
-            block.name = "NULL";
-            block.data = nullopt;
-        }
-    }
-
-    auto it = find(pageLoadOrder.begin(), pageLoadOrder.end(), screenName);
-    if (it != pageLoadOrder.end()) {
-        pageLoadOrder.erase(it);
+    for (int i = start; i < start + required; ++i) {
+        memory[i].name = "NULL";
     }
 }
 
@@ -188,7 +156,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
         if (screen != nullptr && !screen->isFinished()) {
 
             if (screen->getMemStartIndex() == -1) {
-                if (!allocateMemory(screen, screen->getRequiredMemory())) {
+                if (!allocateMemory(screen)) {
                     // Could not allocate memory, requeue and skip
                     lock_guard<mutex> lock(queueMutex);
                     queue.push_back(screen);
@@ -235,7 +203,7 @@ void rrCore(deque<Screen*>& queue, mutex& queueMutex, vector<Screen>& screens, m
             }
 
             if (screen->isFinished()) {
-                deallocateMemory(screen->getName());
+                deallocateMemory(screen);
             } else {
                 lock_guard<mutex> lock(queueMutex);
                 screen->setRunningToFalse();
