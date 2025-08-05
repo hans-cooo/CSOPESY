@@ -29,7 +29,7 @@ atomic<bool> schedulerRunning(false);  // Shared flag to signal scheduler to sto
 thread schedulerThread;
 bool isInitialized = false;
 atomic<int> generatedProcessCount(0);
-const int maxGeneratedProcesses = 1000;
+const int maxGeneratedProcesses = 50;
 recursive_mutex memoryMutex;
 namespace fs = std::filesystem;
 
@@ -46,6 +46,8 @@ std::mutex coutMutex; // For logging
 atomic<int> totalIdleTicks(0);
 atomic<int> totalActiveTicks(0);
 atomic<int> totalCpuTicks(0);
+atomic<int> memoryPagesPagedIn(0);
+atomic<int> memoryPagesPagedOut(0);
 
 void printHeader() {
     cout << "   ____   ____    _____   ____    ____   ____   __   __" << "\n";
@@ -163,7 +165,7 @@ bool allocateMemory(Screen* screen) {
         //     cout << "[EVICT] Evicting process " << evicted->getName()
         //         << " to free up memory.\n";
         // }
-        
+        memoryPagesPagedOut += evicted->getRequiredMemory();
         deallocateMemory(evicted);
         //printMemoryState();
 
@@ -190,6 +192,7 @@ bool allocateMemory(Screen* screen) {
     }
 
     screen->setMemStartIndex(memStart);
+    memoryPagesPagedIn += memSize; 
     // {
     //     lock_guard<mutex> lock(coutMutex);
     //     cout << "[ALLOCATE] Process " << screen->getName()
